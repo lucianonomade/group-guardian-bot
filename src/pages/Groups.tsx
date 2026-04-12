@@ -53,9 +53,11 @@ export default function Groups() {
     setLoading(false);
   };
 
-  const fetchInstances = async () => {
+  const fetchInstances = async (): Promise<Instance[]> => {
     const { data } = await supabase.from("instances").select("*");
-    setInstances((data as Instance[]) ?? []);
+    const insts = (data as Instance[]) ?? [];
+    setInstances(insts);
+    return insts;
   };
 
   // Auto-sync in background when page opens

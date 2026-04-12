@@ -106,20 +106,8 @@ export default function Groups() {
     setGroups(prev => prev.map(g => g.id === group.id ? { ...g, is_monitored: !g.is_monitored } : g));
   };
 
-  const openWelcomeEditor = (group: Group) => {
-    setEditingGroup(group);
-    setWelcomeMsg(group.welcome_message || "");
-  };
-
-  const saveWelcomeMessage = async () => {
-    if (!editingGroup) return;
-    setSavingWelcome(true);
-    const message = welcomeMsg.trim() || null;
-    await supabase.from("groups").update({ welcome_message: message } as any).eq("id", editingGroup.id);
-    setGroups(prev => prev.map(g => g.id === editingGroup.id ? { ...g, welcome_message: message } : g));
-    toast.success(message ? "Mensagem de boas-vindas salva!" : "Mensagem de boas-vindas removida!");
-    setEditingGroup(null);
-    setSavingWelcome(false);
+  const handleWelcomeSaved = (groupId: string, message: string | null) => {
+    setGroups(prev => prev.map(g => g.id === groupId ? { ...g, welcome_message: message } : g));
   };
 
   const filtered = groups.filter(g => g.name.toLowerCase().includes(search.toLowerCase()));
@@ -225,78 +213,11 @@ export default function Groups() {
            </Card>
          </motion.div>
 
-        {/* Welcome Message Dialog */}
-        <Dialog open={!!editingGroup} onOpenChange={(open) => !open && setEditingGroup(null)}>
-          <DialogContent className="glass-card border-border/50 sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle className="text-base flex items-center gap-2">
-                <MessageSquare className="h-4 w-4 text-primary" />
-                Mensagem de boas-vindas
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <p className="text-xs text-muted-foreground">
-                Grupo: <span className="font-medium text-foreground">{editingGroup?.name}</span>
-              </p>
-
-              {/* Templates */}
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground/70">Templates prontos</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { label: "👋 Simples", text: "Olá {{nome}}, bem-vindo(a) ao grupo! 👋" },
-                    { label: "📜 Com regras", text: "Olá {{nome}}, seja bem-vindo(a)! 👋\n\n📜 Por favor, leia as regras fixadas antes de interagir.\n\nBoa convivência a todos!" },
-                    { label: "🎉 Festivo", text: "🎉 *{{nome}}* chegou!\n\nSeja muito bem-vindo(a) ao nosso grupo! Fique à vontade para se apresentar e participar das conversas. 💬" },
-                    { label: "🏢 Profissional", text: "Bem-vindo(a), {{nome}}! 👋\n\nEste grupo é destinado a discussões profissionais. Por favor:\n\n✅ Apresente-se brevemente\n✅ Mantenha o foco nos temas do grupo\n✅ Respeite todos os membros\n\nBom trabalho!" },
-                  ].map((tpl) => (
-                    <Button
-                      key={tpl.label}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setWelcomeMsg(tpl.text)}
-                      className="text-[11px] h-auto py-2 px-3 border-border/40 hover:border-primary/40 hover:bg-primary/5 justify-start text-left"
-                    >
-                      {tpl.label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-xs">Mensagem (use <code className="bg-muted px-1 rounded text-[10px]">{"{{nome}}"}</code> para o nome do membro)</Label>
-                <Textarea
-                  value={welcomeMsg}
-                  onChange={e => setWelcomeMsg(e.target.value)}
-                  placeholder={"Olá {{nome}}, bem-vindo(a) ao grupo! 👋\n\nPor favor, leia as regras fixadas."}
-                  className="bg-muted/30 border-border/50 min-h-[120px] text-sm"
-                  maxLength={1000}
-                />
-                <p className="text-[10px] text-muted-foreground/50 text-right">{welcomeMsg.length}/1000</p>
-              </div>
-              <div className="flex gap-2 justify-end">
-                {editingGroup?.welcome_message && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => { setWelcomeMsg(""); }}
-                    className="text-xs border-destructive/30 text-destructive hover:bg-destructive/10"
-                  >
-                    Remover
-                  </Button>
-                )}
-                <Button
-                  size="sm"
-                  onClick={saveWelcomeMessage}
-                  disabled={savingWelcome}
-                  className="text-xs bg-gradient-to-r from-primary to-emerald-500"
-                >
-                  <Save className="mr-1.5 h-3 w-3" />
-                  {savingWelcome ? "Salvando..." : "Salvar"}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <WelcomeMessageDialog
+          group={editingGroup}
+          onClose={() => setEditingGroup(null)}
+          onSaved={handleWelcomeSaved}
+        />
        </div>
      </DashboardLayout>
    );

@@ -246,6 +246,104 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
+    // SYNC GROUPS
+    if (action === 'sync-groups') {
+      const instanceName = url.searchParams.get('instanceName')
+      if (!instanceName) {
+        return new Response(JSON.stringify({ error: 'instanceName required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
+
+      const serviceSupabase = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      )
+
+      // Get instance from DB
+      const { data: instance } = await serviceSupabase
+        .from('instances')
+        .select('*')
+        .eq('name', instanceName)
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      if (!instance) {
+        return new Response(JSON.stringify({ error: 'Instance not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
+
+      // Fetch all groups from Evolution API
+      const groupsRes = await fetch(`${EVOLUTION_API_URL}/group/fetchAllGroups/${instanceName}?getParticipants=true`, {
+        headers: evoHeaders,
+      })
+      if (!groupsRes.ok) {
+        return new Response(JSON.stringify({ error: 'Failed to fetch groups' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
+      const groupsRaw = await groupsRes.json()
+      const groupsData = Array.isArray(groupsRaw) ? groupsRaw : groupsRaw?.data || []
+
+      // Get owner JID
+      const infoRes = await fetch(`${EVOLUTION_API_URL}/instance/fetchInstances`, { headers: evoHeaders })
+      const instancesData = await infoRes.json()
+      const thisInstance = Array.isArray(instancesData)
+        ? instancesData.find((i: any) => i.name === instanceName)
+        : null
+      const ownerJid = thisInstance?.ownerJid || ''
+
+      let syncedCount = 0
+      const adminJids = new Set<string>()
+
+      for (const g of groupsData) {
+        const jid = g.id || g.jid
+        const name = g.subject || g.name || jid
+        const count = g.size || g.participants?.length || 0
+        const participants = g.participants || []
+
+        const isAdmin = participants.some((p: any) =>
+          (p.phoneNumber === ownerJid || p.id === ownerJid) &&
+          (p.admin === 'admin' || p.admin === 'superadmin')
+        )
+        if (!isAdmin) continue
+
+        adminJids.add(jid)
+        syncedCount++
+
+        const { data: existing } = await serviceSupabase
+          .from('groups')
+          .select('id')
+          .eq('group_jid', jid)
+          .eq('instance_id', instance.id)
+          .maybeSingle()
+
+        if (existing) {
+          await serviceSupabase.from('groups').update({ name, participant_count: count }).eq('id', existing.id)
+        } else {
+          await serviceSupabase.from('groups').insert({
+            user_id: user.id,
+            instance_id: instance.id,
+            group_jid: jid,
+            name,
+            participant_count: count,
+            is_monitored: true,
+          })
+        }
+      }
+
+      // Remove groups where bot is no longer admin
+      const { data: existingGroups } = await serviceSupabase
+        .from('groups')
+        .select('id, group_jid')
+        .eq('instance_id', instance.id)
+
+      if (existingGroups) {
+        for (const eg of existingGroups) {
+          if (!adminJids.has(eg.group_jid)) {
+            await serviceSupabase.from('groups').delete().eq('id', eg.id)
+          }
+        }
+      }
+
+      return new Response(JSON.stringify({ success: true, synced: syncedCount }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+
     return new Response(JSON.stringify({ error: 'Invalid action' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
   } catch (err) {

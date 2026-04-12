@@ -15,13 +15,38 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json();
     
-    // Evolution API sends events in different formats
-    const event = body.event || body.data?.event;
-    const messageData = body.data || body;
+    console.log("=== WEBHOOK RECEIVED ===");
+    console.log("Event:", body.event);
+    console.log("Keys:", Object.keys(body));
     
-    // Only process group messages
-    const isGroup = messageData?.key?.remoteJid?.endsWith("@g.us") ||
-                    messageData?.message?.key?.remoteJid?.endsWith("@g.us");
+    // Evolution API v2 format: { event, instance, data, ... }
+    const event = body.event;
+    
+    // Only process message events
+    if (event !== "messages.upsert") {
+      console.log("Ignored event:", event);
+      return new Response(JSON.stringify({ status: "ignored", reason: `event: ${event}` }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const messageData = body.data;
+    console.log("Message data keys:", messageData ? Object.keys(messageData) : "null");
+    
+    console.log("Data structure:", JSON.stringify(messageData).substring(0, 1000));
+    
+    if (!messageData) {
+      return new Response(JSON.stringify({ status: "ignored", reason: "no message data" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Evolution API v2 structure
+    const key = messageData.key;
+    const remoteJid = key?.remoteJid;
+    const isGroup = remoteJid?.endsWith("@g.us");
+    
+    console.log("RemoteJid:", remoteJid, "isGroup:", isGroup);
     
     if (!isGroup) {
       return new Response(JSON.stringify({ status: "ignored", reason: "not a group message" }), {
@@ -29,19 +54,31 @@ Deno.serve(async (req) => {
       });
     }
 
-    const key = messageData?.key || messageData?.message?.key;
-    const groupJid = key?.remoteJid;
-    const participantJid = key?.participant || messageData?.pushName;
+    // Skip messages sent by the bot itself
+    if (key?.fromMe) {
+      console.log("Skipping own message");
+      return new Response(JSON.stringify({ status: "ignored", reason: "own message" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const groupJid = remoteJid;
+    const participantJid = key?.participant || "";
     const messageId = key?.id;
+    const pushName = messageData.pushName || "";
     
-    // Extract message text
-    const msg = messageData?.message || messageData?.message?.message;
+    // Extract message text from various message types
+    const msg = messageData.message;
     const messageText = msg?.conversation ||
                         msg?.extendedTextMessage?.text ||
                         msg?.imageMessage?.caption ||
                         msg?.videoMessage?.caption || "";
 
+    console.log("Participant:", participantJid, "PushName:", pushName);
+    console.log("Message text:", messageText?.substring(0, 100));
+
     if (!groupJid || !participantJid || !messageText) {
+      console.log("Missing data - groupJid:", !!groupJid, "participant:", !!participantJid, "text:", !!messageText);
       return new Response(JSON.stringify({ status: "ignored", reason: "missing data" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -52,12 +89,14 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Find the group in database
-    const { data: group } = await supabase
+    const { data: group, error: groupError } = await supabase
       .from("groups")
       .select("*, instances(*)")
       .eq("group_jid", groupJid)
       .eq("is_monitored", true)
       .maybeSingle();
+
+    console.log("Group found:", !!group, "Error:", groupError?.message);
 
     if (!group) {
       return new Response(JSON.stringify({ status: "ignored", reason: "group not monitored" }), {
@@ -86,7 +125,7 @@ Deno.serve(async (req) => {
 
       if (blockedWords) {
         const lowerMsg = messageText.toLowerCase();
-        const found = blockedWords.find(bw => lowerMsg.includes(bw.word.toLowerCase()));
+        const found = blockedWords.find((bw: any) => lowerMsg.includes(bw.word.toLowerCase()));
         if (found) {
           violation = `Palavra proibida: ${found.word}`;
           violationType = "word_deleted";
@@ -95,14 +134,17 @@ Deno.serve(async (req) => {
     }
 
     if (!violation || !violationType) {
+      console.log("No violation found");
       return new Response(JSON.stringify({ status: "ok", reason: "no violation" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    console.log("VIOLATION DETECTED:", violation);
+
     // Delete the message via Evolution API
     try {
-      await fetch(`${instance.api_url}/chat/deleteMessageForEveryone/${instance.name}`, {
+      const deleteRes = await fetch(`${instance.api_url}/chat/deleteMessageForEveryone/${instance.name}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -115,6 +157,7 @@ Deno.serve(async (req) => {
           participant: participantJid,
         }),
       });
+      console.log("Delete message response:", deleteRes.status);
     } catch (e) {
       console.error("Failed to delete message:", e);
     }
@@ -129,21 +172,23 @@ Deno.serve(async (req) => {
     const currentWarnings = warningCount ?? 0;
     const newWarningNumber = currentWarnings + 1;
 
+    console.log("Warning count:", currentWarnings, "-> new:", newWarningNumber);
+
     // Log the action
     await supabase.from("action_logs").insert({
       user_id: userId,
       group_id: group.id,
       action_type: violationType,
       participant_jid: participantJid,
-      participant_name: messageData?.pushName || null,
+      participant_name: pushName || null,
       details: `${violation} - Mensagem apagada`,
     });
 
     if (newWarningNumber >= 3) {
       // BAN - 3rd strike
-      // Remove from group via Evolution API
+      console.log("BANNING user:", participantJid);
       try {
-        await fetch(`${instance.api_url}/group/updateParticipant/${instance.name}`, {
+        const banRes = await fetch(`${instance.api_url}/group/updateParticipant/${instance.name}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -155,30 +200,28 @@ Deno.serve(async (req) => {
             participants: [participantJid],
           }),
         });
+        console.log("Ban response:", banRes.status);
       } catch (e) {
         console.error("Failed to remove participant:", e);
       }
 
-      // Record ban
       await supabase.from("bans").insert({
         user_id: userId,
         group_id: group.id,
         participant_jid: participantJid,
-        participant_name: messageData?.pushName || null,
+        participant_name: pushName || null,
         reason: `3 violações - Última: ${violation}`,
       });
 
-      // Log ban action
       await supabase.from("action_logs").insert({
         user_id: userId,
         group_id: group.id,
         action_type: "ban",
         participant_jid: participantJid,
-        participant_name: messageData?.pushName || null,
+        participant_name: pushName || null,
         details: `Banido após 3 violações`,
       });
 
-      // Send ban message
       try {
         await fetch(`${instance.api_url}/message/sendText/${instance.name}`, {
           method: "POST",
@@ -188,7 +231,7 @@ Deno.serve(async (req) => {
           },
           body: JSON.stringify({
             number: groupJid,
-            text: `🚫 *${messageData?.pushName || participantJid}* foi removido do grupo por violar as regras 3 vezes.\n\nMotivo da última violação: ${violation}`,
+            text: `🚫 *${pushName || participantJid}* foi removido do grupo por violar as regras 3 vezes.\n\nMotivo da última violação: ${violation}`,
           }),
         });
       } catch (e) {
@@ -196,27 +239,26 @@ Deno.serve(async (req) => {
       }
     } else {
       // WARNING
+      console.log("WARNING user:", participantJid, "warning #", newWarningNumber);
       await supabase.from("warnings").insert({
         user_id: userId,
         group_id: group.id,
         participant_jid: participantJid,
-        participant_name: messageData?.pushName || null,
+        participant_name: pushName || null,
         reason: violation,
         message_content: messageText.substring(0, 500),
         warning_number: newWarningNumber,
       });
 
-      // Log warning action
       await supabase.from("action_logs").insert({
         user_id: userId,
         group_id: group.id,
         action_type: "warning",
         participant_jid: participantJid,
-        participant_name: messageData?.pushName || null,
+        participant_name: pushName || null,
         details: `Aviso ${newWarningNumber}/2 - ${violation}`,
       });
 
-      // Send warning message
       const remaining = 2 - newWarningNumber;
       try {
         await fetch(`${instance.api_url}/message/sendText/${instance.name}`, {
@@ -227,7 +269,7 @@ Deno.serve(async (req) => {
           },
           body: JSON.stringify({
             number: groupJid,
-            text: `⚠️ *Aviso ${newWarningNumber}/2* para *${messageData?.pushName || participantJid}*\n\nMotivo: ${violation}\n\n${remaining > 0 ? `Você tem mais ${remaining} aviso(s) antes de ser removido do grupo.` : "⛔ Próxima violação resultará em *banimento* do grupo!"}`,
+            text: `⚠️ *Aviso ${newWarningNumber}/2* para *${pushName || participantJid}*\n\nMotivo: ${violation}\n\n${remaining > 0 ? `Você tem mais ${remaining} aviso(s) antes de ser removido do grupo.` : "⛔ Próxima violação resultará em *banimento* do grupo!"}`,
           }),
         });
       } catch (e) {
@@ -235,6 +277,7 @@ Deno.serve(async (req) => {
       }
     }
 
+    console.log("=== PROCESSED SUCCESSFULLY ===");
     return new Response(JSON.stringify({ status: "processed", action: newWarningNumber >= 3 ? "banned" : "warned", warningNumber: newWarningNumber }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

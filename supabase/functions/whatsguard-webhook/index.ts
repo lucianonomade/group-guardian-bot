@@ -134,6 +134,11 @@ Deno.serve(async (req) => {
       });
     }
 
+    // DEBUG: Log the full data structure to understand Evolution API format
+    console.log("FULL DATA KEYS:", JSON.stringify(Object.keys(messageData)));
+    console.log("RAW MESSAGE FIELD:", JSON.stringify(messageData.message)?.substring(0, 500));
+    console.log("RAW KEY FIELD:", JSON.stringify(messageData.key));
+
     const key = messageData.key;
     const remoteJid = key?.remoteJid;
     const isGroup = remoteJid?.endsWith("@g.us");
@@ -157,13 +162,20 @@ Deno.serve(async (req) => {
     const pushName = messageData.pushName || "";
 
     const msg = messageData.message;
+    // Try all known Evolution API text fields
     const messageText = msg?.conversation ||
                         msg?.extendedTextMessage?.text ||
                         msg?.imageMessage?.caption ||
-                        msg?.videoMessage?.caption || "";
+                        msg?.videoMessage?.caption ||
+                        msg?.buttonsResponseMessage?.selectedDisplayText ||
+                        msg?.listResponseMessage?.title ||
+                        msg?.templateButtonReplyMessage?.selectedDisplayText ||
+                        messageData.body ||
+                        messageData.text ||
+                        "";
 
     console.log("Participant:", participantJid, "PushName:", pushName);
-    console.log("Message text:", messageText?.substring(0, 100));
+    console.log("Message text extracted:", JSON.stringify(messageText)?.substring(0, 200));
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;

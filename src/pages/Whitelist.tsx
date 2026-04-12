@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { ShieldCheck, Plus, Trash2, UserCheck, Download, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { motion } from "framer-motion";
+import { pageHeader, fadeUpItem, tableRowItem } from "@/lib/animations";
 
 export default function Whitelist() {
   const { user } = useAuth();
@@ -150,7 +152,7 @@ export default function Whitelist() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <motion.div {...pageHeader} className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
               <ShieldCheck className="h-5 w-5 text-primary" />
@@ -242,77 +244,86 @@ export default function Whitelist() {
               </DialogContent>
             </Dialog>
           </div>
-        </div>
+        </motion.div>
 
-        <Card className="glass-card overflow-hidden">
-          <CardHeader className="border-b border-border/30 pb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <UserCheck className="h-4 w-4 text-primary" />
-                  Participantes na Whitelist
-                </CardTitle>
-                <CardDescription className="text-xs mt-1">{filtered?.length ?? 0} participante(s)</CardDescription>
+        <motion.div variants={fadeUpItem} initial="hidden" animate="visible" transition={{ delay: 0.1 }}>
+          <Card className="glass-card overflow-hidden">
+            <CardHeader className="border-b border-border/30 pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <UserCheck className="h-4 w-4 text-primary" />
+                    Participantes na Whitelist
+                  </CardTitle>
+                  <CardDescription className="text-xs mt-1">{filtered?.length ?? 0} participante(s)</CardDescription>
+                </div>
+                <Select value={filterGroupId} onValueChange={setFilterGroupId}>
+                  <SelectTrigger className="w-[180px] bg-muted/30 border-border/50 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os grupos</SelectItem>
+                    {groups?.map((g) => (
+                      <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <Select value={filterGroupId} onValueChange={setFilterGroupId}>
-                <SelectTrigger className="w-[180px] bg-muted/30 border-border/50 text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os grupos</SelectItem>
-                  {groups?.map((g) => (
-                    <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            {isLoading ? (
-              <p className="text-center py-10 text-sm text-muted-foreground">Carregando...</p>
-            ) : !filtered?.length ? (
-              <div className="flex flex-col items-center gap-3 py-10 text-muted-foreground">
-                <ShieldCheck className="h-8 w-8 opacity-20" />
-                <p className="text-sm">Nenhum participante na whitelist</p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-border/30 hover:bg-transparent">
-                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Nome</TableHead>
-                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Número</TableHead>
-                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Grupo</TableHead>
-                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 w-[60px]">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map((item: any) => (
-                    <TableRow key={item.id} className="border-border/20 hover:bg-muted/10">
-                      <TableCell className="text-sm font-medium">
-                        {item.participant_name || "—"}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className="bg-muted/30 text-foreground/70 border-border/30 font-mono text-xs">
-                          {item.participant_jid.replace("@s.whatsapp.net", "")}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm">{(item as any).groups?.name || "—"}</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-muted-foreground/30 hover:text-destructive"
-                          onClick={() => removeMutation.mutate(item.id)}
-                          disabled={removeMutation.isPending}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </TableCell>
+            </CardHeader>
+            <CardContent className="p-0">
+              {isLoading ? (
+                <p className="text-center py-10 text-sm text-muted-foreground">Carregando...</p>
+              ) : !filtered?.length ? (
+                <div className="flex flex-col items-center gap-3 py-10 text-muted-foreground">
+                  <ShieldCheck className="h-8 w-8 opacity-20" />
+                  <p className="text-sm">Nenhum participante na whitelist</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-border/30 hover:bg-transparent">
+                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Nome</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Número</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Grupo</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 w-[60px]">Ações</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.map((item: any, i: number) => (
+                      <motion.tr
+                        key={item.id}
+                        variants={tableRowItem}
+                        initial="hidden"
+                        animate="visible"
+                        transition={{ delay: 0.2 + i * 0.04, duration: 0.3 }}
+                        className="border-b border-border/20 hover:bg-muted/10 transition-colors"
+                      >
+                        <TableCell className="text-sm font-medium">
+                          {item.participant_name || "—"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className="bg-muted/30 text-foreground/70 border-border/30 font-mono text-xs">
+                            {item.participant_jid.replace("@s.whatsapp.net", "")}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm">{(item as any).groups?.name || "—"}</TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground/30 hover:text-destructive"
+                            onClick={() => removeMutation.mutate(item.id)}
+                            disabled={removeMutation.isPending}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </TableCell>
+                      </motion.tr>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     </DashboardLayout>
   );

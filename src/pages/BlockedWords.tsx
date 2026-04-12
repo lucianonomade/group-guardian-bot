@@ -5,12 +5,13 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Plus, Trash2, MessageSquareOff, Download, Upload } from "lucide-react";
+import { motion } from "framer-motion";
+import { pageHeader, fadeUpItem, staggerContainer, scaleUpItem } from "@/lib/animations";
 
 interface BlockedWord {
   id: string;
@@ -108,7 +109,7 @@ export default function BlockedWords() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <motion.div {...pageHeader} className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Palavras Bloqueadas</h1>
             <p className="mt-1 text-sm text-muted-foreground">Configure palavras que o bot vai monitorar</p>
@@ -124,35 +125,37 @@ export default function BlockedWords() {
               </label>
             </Button>
           </div>
-        </div>
+        </motion.div>
 
-        <Card className="glass-card">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Adicionar Palavra</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-3">
-              <div className="flex-1 min-w-[200px]">
-                <Input value={newWord} onChange={e => setNewWord(e.target.value)} placeholder="Digite a palavra..." onKeyDown={e => e.key === "Enter" && addWord()} className="bg-muted/30 border-border/50" />
+        <motion.div variants={fadeUpItem} initial="hidden" animate="visible">
+          <Card className="glass-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Adicionar Palavra</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-3">
+                <div className="flex-1 min-w-[200px]">
+                  <Input value={newWord} onChange={e => setNewWord(e.target.value)} placeholder="Digite a palavra..." onKeyDown={e => e.key === "Enter" && addWord()} className="bg-muted/30 border-border/50" />
+                </div>
+                <div className="w-[180px]">
+                  <Select value={newCategory} onValueChange={setNewCategory}>
+                    <SelectTrigger className="bg-muted/30 border-border/50"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {CATEGORIES.map(c => (
+                        <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button onClick={addWord} className="bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-500/90 shadow-lg shadow-primary/20">
+                  <Plus className="mr-1.5 h-3.5 w-3.5" /> Adicionar
+                </Button>
               </div>
-              <div className="w-[180px]">
-                <Select value={newCategory} onValueChange={setNewCategory}>
-                  <SelectTrigger className="bg-muted/30 border-border/50"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {CATEGORIES.map(c => (
-                      <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button onClick={addWord} className="bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-500/90 shadow-lg shadow-primary/20">
-                <Plus className="mr-1.5 h-3.5 w-3.5" /> Adicionar
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-        <div className="flex flex-wrap gap-2">
+        <motion.div variants={fadeUpItem} initial="hidden" animate="visible" transition={{ delay: 0.1 }} className="flex flex-wrap gap-2">
           <Badge 
             variant={filterCategory === "all" ? "default" : "outline"} 
             className={`cursor-pointer text-xs ${filterCategory === "all" ? "bg-primary/15 text-primary border-primary/20" : "border-border/50 text-muted-foreground"}`} 
@@ -173,33 +176,39 @@ export default function BlockedWords() {
               </Badge>
             );
           })}
-        </div>
+        </motion.div>
 
-        <Card className="glass-card">
-          <CardContent className="p-4">
-            {loading ? (
-              <p className="text-sm text-muted-foreground text-center py-10">Carregando...</p>
-            ) : filtered.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 py-10 text-muted-foreground">
-                <MessageSquareOff className="h-8 w-8 opacity-30" />
-                <p className="text-sm">Nenhuma palavra bloqueada.</p>
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {filtered.map(w => (
-                  <div key={w.id} className="flex items-center gap-2 rounded-lg border border-border/30 bg-muted/20 px-3 py-2 transition-colors hover:border-border/50">
-                    <Switch checked={w.is_active} onCheckedChange={() => toggleWord(w)} className="scale-75" />
-                    <span className={`text-sm font-medium ${!w.is_active ? "line-through text-muted-foreground/40" : ""}`}>{w.word}</span>
-                    <Badge variant="outline" className="text-[10px] border-border/30 text-muted-foreground/60">{w.category}</Badge>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground/30 hover:text-destructive" onClick={() => deleteWord(w.id)}>
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <motion.div variants={fadeUpItem} initial="hidden" animate="visible" transition={{ delay: 0.2 }}>
+          <Card className="glass-card">
+            <CardContent className="p-4">
+              {loading ? (
+                <p className="text-sm text-muted-foreground text-center py-10">Carregando...</p>
+              ) : filtered.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 py-10 text-muted-foreground">
+                  <MessageSquareOff className="h-8 w-8 opacity-30" />
+                  <p className="text-sm">Nenhuma palavra bloqueada.</p>
+                </div>
+              ) : (
+                <motion.div className="flex flex-wrap gap-2" variants={staggerContainer} initial="hidden" animate="visible">
+                  {filtered.map(w => (
+                    <motion.div
+                      key={w.id}
+                      variants={scaleUpItem}
+                      className="flex items-center gap-2 rounded-lg border border-border/30 bg-muted/20 px-3 py-2 transition-colors hover:border-border/50"
+                    >
+                      <Switch checked={w.is_active} onCheckedChange={() => toggleWord(w)} className="scale-75" />
+                      <span className={`text-sm font-medium ${!w.is_active ? "line-through text-muted-foreground/40" : ""}`}>{w.word}</span>
+                      <Badge variant="outline" className="text-[10px] border-border/30 text-muted-foreground/60">{w.category}</Badge>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground/30 hover:text-destructive" onClick={() => deleteWord(w.id)}>
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     </DashboardLayout>
   );

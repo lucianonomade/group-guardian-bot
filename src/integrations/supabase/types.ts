@@ -126,6 +126,56 @@ export type Database = {
         }
         Relationships: []
       }
+      broadcasts: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string | null
+          instance_id: string
+          message: string
+          sent_count: number
+          status: string
+          target_groups: string[]
+          total_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          instance_id: string
+          message: string
+          sent_count?: number
+          status?: string
+          target_groups?: string[]
+          total_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          instance_id?: string
+          message?: string
+          sent_count?: number
+          status?: string
+          target_groups?: string[]
+          total_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "broadcasts_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       groups: {
         Row: {
           created_at: string

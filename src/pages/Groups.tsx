@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
@@ -9,8 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { WelcomeMessageDialog } from "@/components/WelcomeMessageDialog";
+import { AntifloodDialog } from "@/components/AntifloodDialog";
 import { toast } from "sonner";
-import { Users, Search, RefreshCw, MessageSquare } from "lucide-react";
+import { Users, Search, RefreshCw, MessageSquare, ShieldAlert, Eye } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { pageHeader, fadeUpItem, tableRowItem } from "@/lib/animations";
 
@@ -33,6 +35,7 @@ interface Instance {
 
 export default function Groups() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [groups, setGroups] = useState<Group[]>([]);
   const [instances, setInstances] = useState<Instance[]>([]);
   const [search, setSearch] = useState("");
@@ -40,6 +43,8 @@ export default function Groups() {
   const [syncing, setSyncing] = useState(false);
   const [syncBanner, setSyncBanner] = useState(false);
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
+  const [antifloodGroupId, setAntifloodGroupId] = useState<string | null>(null);
+  const [antifloodGroupName, setAntifloodGroupName] = useState("");
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchGroups = async () => {
@@ -157,6 +162,7 @@ export default function Groups() {
                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Nome</TableHead>
                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Membros</TableHead>
                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Boas-vindas</TableHead>
+                     <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Anti-flood</TableHead>
                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Status</TableHead>
                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Monitorar</TableHead>
                    </TableRow>
@@ -178,7 +184,15 @@ export default function Groups() {
                          transition={{ delay: 0.2 + i * 0.04, duration: 0.3 }}
                          className="border-b border-border/20 hover:bg-muted/10 transition-colors"
                        >
-                         <TableCell className="font-medium text-sm">{group.name}</TableCell>
+                          <TableCell>
+                            <button
+                              className="font-medium text-sm hover:text-primary transition-colors flex items-center gap-1.5 cursor-pointer"
+                              onClick={() => navigate(`/groups/${group.id}/members`)}
+                            >
+                              {group.name}
+                              <Eye className="h-3 w-3 text-muted-foreground/40" />
+                            </button>
+                          </TableCell>
                          <TableCell>
                            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                              <Users className="h-3 w-3" />
@@ -196,11 +210,22 @@ export default function Groups() {
                              {group.welcome_message ? "Configurada" : "Configurar"}
                            </Button>
                          </TableCell>
-                         <TableCell>
-                           <Badge variant={group.is_monitored ? "default" : "secondary"} className={group.is_monitored ? "bg-primary/15 text-primary border-primary/20 hover:bg-primary/20" : ""}>
-                             {group.is_monitored ? "Ativo" : "Inativo"}
-                           </Badge>
-                         </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => { setAntifloodGroupId(group.id); setAntifloodGroupName(group.name); }}
+                              className="text-xs gap-1.5 text-muted-foreground/50 hover:text-primary"
+                            >
+                              <ShieldAlert className="h-3 w-3" />
+                              Configurar
+                            </Button>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={group.is_monitored ? "default" : "secondary"} className={group.is_monitored ? "bg-primary/15 text-primary border-primary/20 hover:bg-primary/20" : ""}>
+                              {group.is_monitored ? "Ativo" : "Inativo"}
+                            </Badge>
+                          </TableCell>
                          <TableCell>
                            <Switch checked={group.is_monitored} onCheckedChange={() => toggleMonitor(group)} />
                          </TableCell>
@@ -217,6 +242,11 @@ export default function Groups() {
           group={editingGroup}
           onClose={() => setEditingGroup(null)}
           onSaved={handleWelcomeSaved}
+        />
+        <AntifloodDialog
+          groupId={antifloodGroupId}
+          groupName={antifloodGroupName}
+          onClose={() => setAntifloodGroupId(null)}
         />
        </div>
      </DashboardLayout>

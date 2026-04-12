@@ -274,6 +274,41 @@ export type Database = {
           },
         ]
       }
+      whitelist: {
+        Row: {
+          created_at: string
+          group_id: string | null
+          id: string
+          participant_jid: string
+          participant_name: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id?: string | null
+          id?: string
+          participant_jid: string
+          participant_name?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string | null
+          id?: string
+          participant_jid?: string
+          participant_name?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whitelist_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

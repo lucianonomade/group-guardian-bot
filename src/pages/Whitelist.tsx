@@ -26,11 +26,11 @@ export default function Whitelist() {
   const [importingGroupId, setImportingGroupId] = useState<string | null>(null);
 
   const { data: groups } = useQuery({
-    queryKey: ["groups", user?.id],
+    queryKey: ["groups-with-instances", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("groups")
-        .select("*")
+        .select("*, instances(*)")
         .eq("user_id", user!.id)
         .eq("is_monitored", true)
         .order("name");

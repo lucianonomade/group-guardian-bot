@@ -162,10 +162,42 @@ export default function Whitelist() {
             </p>
           </div>
 
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button><Plus className="h-4 w-4 mr-2" /> Adicionar</Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            {/* Import admins dialog */}
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline"><Download className="h-4 w-4 mr-2" /> Importar Admins</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Importar Admins do Grupo</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3 pt-2">
+                  <p className="text-sm text-muted-foreground">Selecione um grupo para importar todos os admins automaticamente para a whitelist.</p>
+                  {groups?.map((g: any) => (
+                    <Button
+                      key={g.id}
+                      variant="outline"
+                      className="w-full justify-between"
+                      disabled={importingGroupId === g.id}
+                      onClick={() => importAdmins(g.id)}
+                    >
+                      {g.name}
+                      {importingGroupId === g.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Download className="h-4 w-4" />
+                      )}
+                    </Button>
+                  ))}
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button><Plus className="h-4 w-4 mr-2" /> Adicionar</Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Adicionar à Whitelist</DialogTitle>

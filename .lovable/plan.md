@@ -1,45 +1,56 @@
 
 
-## Plano: Comandos no WhatsApp + Painel de Membros + Anti-flood
+## Plano: Automação, Analytics e Resumo Diário de Grupo
 
-### 1. Comandos no WhatsApp (!ban, !warn, !mute, !unmute)
+### 1. Comandos de Automação no WhatsApp
 
-**Webhook (`whatsguard-webhook/index.ts`):** Adicionar detecção de comandos antes da verificação de violações. Quando uma mensagem começar com `!`, verificar se o remetente é admin do grupo e executar a ação:
-- `!ban @usuario` — remove e registra ban
-- `!warn @usuario [motivo]` — adiciona aviso manual
-- `!unwarn @usuario` — reseta avisos do usuário
-- `!mute @usuario [minutos]` — (futuro) silencia temporariamente
+**Novos comandos no webhook (`whatsguard-webhook`):**
+- `!menu` — Envia lista de todos os comandos disponíveis ao grupo
+- `!regras` — Envia as regras do grupo (configuráveis pelo painel)
+- `!info` — Mostra estatísticas rápidas do grupo (total membros, avisos ativos, bans)
 
-**Banco de dados:** Nenhuma alteração necessária — reutiliza as tabelas `warnings`, `bans` e `action_logs`.
+**Configuração no painel:** Adicionar campo "Regras do grupo" na página de Grupos (ou nos detalhes do grupo) para que o admin defina o texto que o `!regras` envia.
 
-**Lógica:** O webhook verifica se o participante é admin do grupo via Evolution API antes de processar o comando. Comandos de não-admins são ignorados.
-
----
-
-### 2. Painel de Membros do Grupo
-
-**Nova action na Edge Function (`evolution-manager`):** Adicionar `fetch-group-participants` que busca os membros de um grupo específico via Evolution API.
-
-**Nova página (`src/pages/GroupMembers.tsx`):** Acessível ao clicar em um grupo na lista. Exibe:
-- Lista de todos os membros com nome, JID, role (admin/membro)
-- Quantidade de avisos ativos de cada membro
-- Botões de ação rápida: dar aviso, resetar avisos, banir, adicionar à whitelist
-- Busca e filtros (por role, por nº de avisos)
-
-**Rota:** `/groups/:groupId/members`
+**Banco de dados:** Adicionar coluna `rules_text` na tabela `groups` para armazenar as regras.
 
 ---
 
-### 3. Anti-flood / Rate Limit
+### 2. Resumo Diário do Grupo (com IA)
 
-**Banco de dados:** Criar tabela `antiflood_settings` com campos:
-- `group_id`, `user_id`, `max_messages` (default 5), `time_window_seconds` (default 10), `is_enabled` (default true)
+**Nova Edge Function (`daily-summary`):**
+- Agendada via `pg_cron` para rodar uma vez por dia (ex: 22h)
+- Para cada grupo monitorado, busca os `action_logs` do dia (avisos, bans, mensagens deletadas)
+- Envia o resumo para a Lovable AI Gateway (Gemini Flash) pedindo um resumo formatado em português
+- Envia o resumo como mensagem no grupo via Evolution API
 
-**Webhook:** Adicionar verificação de flood antes das verificações de link/palavra:
-- Manter cache em memória (Map) com contagem de mensagens por participante/grupo
-- Se exceder o limite → aplicar aviso automático como violação tipo `flood`
+**Nova tabela `daily_summaries`:**
+- `id`, `group_id`, `user_id`, `summary_text`, `date`, `members_active` (JSON), `created_at`
 
-**UI na página de Grupos:** Adicionar botão de configuração anti-flood por grupo, com campos para definir limite de mensagens e janela de tempo.
+**UI no Dashboard:** Card mostrando o último resumo de cada grupo, com opção de ver histórico.
+
+---
+
+### 3. Analytics e Relatórios no Dashboard
+
+**Melhorias na página Index (Dashboard):**
+- **Ranking de membros mais ativos:** Baseado na contagem de `action_logs` por participante (quem mais recebeu avisos, quem mais foi moderado)
+- **Gráfico de crescimento:** Evolução de membros por grupo ao longo do tempo (requer tracking de `participant_count` com histórico)
+- **Gráfico de moderação:** Avisos vs Bans por semana/mês
+
+**Nova tabela `group_snapshots`:**
+- `id`, `group_id`, `user_id`, `participant_count`, `snapshot_date`, `created_at`
+- Populada automaticamente pela função `daily-summary` ou pelo sync de grupos
+
+**Nova página `Analytics` (opcional):** Página dedicada com gráficos mais detalhados, filtros por grupo e período.
+
+---
+
+### 4. Mensagens Recorrentes (Agendamento)
+
+**Extensão do Broadcast:**
+- Adicionar opção de "recorrência" (diário, semanal) nos broadcasts
+- Novo campo `recurrence` na tabela `broadcasts` (null = envio único, 'daily', 'weekly')
+- O `broadcast-scheduler` já existente passa a verificar e re-agendar broadcasts recorrentes
 
 ---
 
@@ -47,10 +58,21 @@
 
 | Arquivo | Ação |
 |---|---|
-| `supabase/functions/whatsguard-webhook/index.ts` | Adicionar comandos + anti-flood |
-| `supabase/functions/evolution-manager/index.ts` | Adicionar `fetch-group-participants` |
-| `src/pages/GroupMembers.tsx` | Nova página de membros |
-| `src/pages/Groups.tsx` | Link para membros |
-| `src/App.tsx` | Nova rota `/groups/:groupId/members` |
-| `supabase/migrations/..._antiflood.sql` | Tabela `antiflood_settings` com RLS |
+| `supabase/functions/whatsguard-webhook/index.ts` | Adicionar !menu, !regras, !info |
+| `supabase/functions/daily-summary/index.ts` | Nova função de resumo diário com IA |
+| `src/pages/Index.tsx` | Adicionar ranking de membros e gráficos extras |
+| `src/pages/Groups.tsx` | Campo de regras do grupo |
+| `src/pages/Analytics.tsx` | Nova página de analytics (opcional) |
+| `src/App.tsx` | Nova rota /analytics |
+| Migration: `groups` | Adicionar coluna `rules_text` |
+| Migration: `daily_summaries` | Nova tabela |
+| Migration: `group_snapshots` | Nova tabela para histórico |
+| Migration: `broadcasts` | Adicionar coluna `recurrence` |
+| SQL (insert tool): `pg_cron` | Agendar daily-summary |
+
+### Ordem de implementação sugerida
+1. Comandos !menu, !regras, !info (rápido, valor imediato)
+2. Analytics no dashboard (ranking + gráficos)
+3. Resumo diário com IA (mais complexo, maior impacto)
+4. Mensagens recorrentes (extensão natural do broadcast)
 

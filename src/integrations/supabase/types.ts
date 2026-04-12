@@ -14,7 +14,266 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      action_logs: {
+        Row: {
+          action_type: string
+          created_at: string
+          details: string | null
+          group_id: string | null
+          id: string
+          participant_jid: string | null
+          participant_name: string | null
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          details?: string | null
+          group_id?: string | null
+          id?: string
+          participant_jid?: string | null
+          participant_name?: string | null
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          details?: string | null
+          group_id?: string | null
+          id?: string
+          participant_jid?: string | null
+          participant_name?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "action_logs_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bans: {
+        Row: {
+          banned_at: string
+          group_id: string
+          id: string
+          is_active: boolean
+          participant_jid: string
+          participant_name: string | null
+          reason: string
+          unbanned_at: string | null
+          user_id: string
+        }
+        Insert: {
+          banned_at?: string
+          group_id: string
+          id?: string
+          is_active?: boolean
+          participant_jid: string
+          participant_name?: string | null
+          reason: string
+          unbanned_at?: string | null
+          user_id: string
+        }
+        Update: {
+          banned_at?: string
+          group_id?: string
+          id?: string
+          is_active?: boolean
+          participant_jid?: string
+          participant_name?: string | null
+          reason?: string
+          unbanned_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bans_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blocked_words: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          is_active: boolean
+          user_id: string
+          word: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          user_id: string
+          word: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          user_id?: string
+          word?: string
+        }
+        Relationships: []
+      }
+      groups: {
+        Row: {
+          created_at: string
+          group_jid: string
+          id: string
+          instance_id: string
+          is_monitored: boolean
+          name: string
+          participant_count: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_jid: string
+          id?: string
+          instance_id: string
+          is_monitored?: boolean
+          name: string
+          participant_count?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          group_jid?: string
+          id?: string
+          instance_id?: string
+          is_monitored?: boolean
+          name?: string
+          participant_count?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "groups_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instances: {
+        Row: {
+          api_key: string
+          api_url: string
+          created_at: string
+          id: string
+          is_connected: boolean
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_key: string
+          api_url: string
+          created_at?: string
+          id?: string
+          is_connected?: boolean
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_key?: string
+          api_url?: string
+          created_at?: string
+          id?: string
+          is_connected?: boolean
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      warnings: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          message_content: string | null
+          participant_jid: string
+          participant_name: string | null
+          reason: string
+          user_id: string
+          warning_number: number
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          message_content?: string | null
+          participant_jid: string
+          participant_name?: string | null
+          reason: string
+          user_id: string
+          warning_number?: number
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          message_content?: string | null
+          participant_jid?: string
+          participant_name?: string | null
+          reason?: string
+          user_id?: string
+          warning_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warnings_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

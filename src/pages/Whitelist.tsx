@@ -10,9 +10,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ShieldCheck, Plus, Trash2, UserCheck } from "lucide-react";
+import { ShieldCheck, Plus, Trash2, UserCheck, Download } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Loader2 } from "lucide-react";
 
 export default function Whitelist() {
   const { user } = useAuth();
@@ -22,13 +23,14 @@ export default function Whitelist() {
   const [participantJid, setParticipantJid] = useState("");
   const [participantName, setParticipantName] = useState("");
   const [filterGroupId, setFilterGroupId] = useState("all");
+  const [importingGroupId, setImportingGroupId] = useState<string | null>(null);
 
   const { data: groups } = useQuery({
-    queryKey: ["groups", user?.id],
+    queryKey: ["groups-with-instances", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("groups")
-        .select("*")
+        .select("*, instances(*)")
         .eq("user_id", user!.id)
         .eq("is_monitored", true)
         .order("name");
@@ -91,6 +93,57 @@ export default function Whitelist() {
     onError: () => toast.error("Erro ao remover"),
   });
 
+  const importAdmins = async (groupId: string) => {
+    const group = groups?.find((g: any) => g.id === groupId);
+    if (!group || !group.instances) return;
+    
+    setImportingGroupId(groupId);
+    try {
+      const instance = group.instances as any;
+      const res = await fetch(
+        `${instance.api_url}/group/participants/${instance.name}?groupJid=${group.group_jid}`,
+        { headers: { apikey: instance.api_key } }
+      );
+      const data = await res.json();
+      
+      // Extract admin participants
+      const participants = data?.participants || data || [];
+      const admins = participants.filter(
+        (p: any) => p.admin === "admin" || p.admin === "superadmin"
+      );
+
+      if (!admins.length) {
+        toast.info("Nenhum admin encontrado neste grupo");
+        return;
+      }
+
+      let added = 0;
+      for (const admin of admins) {
+        const jid = admin.id || admin.jid || "";
+        if (!jid || !jid.includes("@s.whatsapp.net")) continue;
+        
+        const { error } = await supabase.from("whitelist").upsert(
+          {
+            user_id: user!.id,
+            group_id: groupId,
+            participant_jid: jid,
+            participant_name: admin.pushName || admin.name || null,
+          },
+          { onConflict: "user_id,group_id,participant_jid" }
+        );
+        if (!error) added++;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["whitelist"] });
+      toast.success(`${added} admin(s) importado(s) para a whitelist!`);
+    } catch (e) {
+      console.error("Import admins error:", e);
+      toast.error("Erro ao importar admins");
+    } finally {
+      setImportingGroupId(null);
+    }
+  };
+
   const filtered = filterGroupId === "all"
     ? whitelist
     : whitelist?.filter((w: any) => w.group_id === filterGroupId);
@@ -109,10 +162,42 @@ export default function Whitelist() {
             </p>
           </div>
 
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button><Plus className="h-4 w-4 mr-2" /> Adicionar</Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            {/* Import admins dialog */}
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline"><Download className="h-4 w-4 mr-2" /> Importar Admins</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Importar Admins do Grupo</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3 pt-2">
+                  <p className="text-sm text-muted-foreground">Selecione um grupo para importar todos os admins automaticamente para a whitelist.</p>
+                  {groups?.map((g: any) => (
+                    <Button
+                      key={g.id}
+                      variant="outline"
+                      className="w-full justify-between"
+                      disabled={importingGroupId === g.id}
+                      onClick={() => importAdmins(g.id)}
+                    >
+                      {g.name}
+                      {importingGroupId === g.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Download className="h-4 w-4" />
+                      )}
+                    </Button>
+                  ))}
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button><Plus className="h-4 w-4 mr-2" /> Adicionar</Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Adicionar à Whitelist</DialogTitle>
@@ -151,7 +236,8 @@ export default function Whitelist() {
                 </Button>
               </div>
             </DialogContent>
-          </Dialog>
+           </Dialog>
+          </div>
         </div>
 
         <Card>

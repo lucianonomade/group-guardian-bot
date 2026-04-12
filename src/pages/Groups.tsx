@@ -108,6 +108,19 @@ export default function Groups() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        <AnimatePresence>
+          {syncBanner && (
+            <motion.div
+              initial={{ opacity: 0, y: -10, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: "auto" }}
+              exit={{ opacity: 0, y: -10, height: 0 }}
+              className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3"
+            >
+              <RefreshCw className="h-4 w-4 animate-spin text-primary" />
+              <span className="text-sm text-primary font-medium">Sincronização automática em andamento...</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
         <motion.div {...pageHeader} className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Grupos</h1>

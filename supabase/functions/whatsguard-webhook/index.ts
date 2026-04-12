@@ -179,18 +179,7 @@ Deno.serve(async (req) => {
     const messageId = key?.id;
     const pushName = messageData.pushName || "";
 
-    const msg = messageData.message;
-    // Try all known Evolution API text fields
-    const messageText = msg?.conversation ||
-                        msg?.extendedTextMessage?.text ||
-                        msg?.imageMessage?.caption ||
-                        msg?.videoMessage?.caption ||
-                        msg?.buttonsResponseMessage?.selectedDisplayText ||
-                        msg?.listResponseMessage?.title ||
-                        msg?.templateButtonReplyMessage?.selectedDisplayText ||
-                        messageData.body ||
-                        messageData.text ||
-                        "";
+    // messageText already extracted above (before fromMe check)
 
     console.log("Participant:", participantJid, "PushName:", pushName);
     console.log("Message text extracted:", JSON.stringify(messageText)?.substring(0, 200));

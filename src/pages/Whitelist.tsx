@@ -23,6 +23,7 @@ export default function Whitelist() {
   const [participantJid, setParticipantJid] = useState("");
   const [participantName, setParticipantName] = useState("");
   const [filterGroupId, setFilterGroupId] = useState("all");
+  const [importingGroupId, setImportingGroupId] = useState<string | null>(null);
 
   const { data: groups } = useQuery({
     queryKey: ["groups", user?.id],

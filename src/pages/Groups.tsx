@@ -58,28 +58,49 @@ export default function Groups() {
     setInstances((data as Instance[]) ?? []);
   };
 
+  // Auto-sync in background when page opens
+  const autoSync = async (insts: Instance[]) => {
+    if (insts.length === 0) return;
+    setSyncing(true);
+    setSyncBanner(true);
+    let totalSynced = 0;
+    for (const inst of insts) {
+      try {
+        const queryStr = new URLSearchParams({ action: "sync-groups", instanceName: inst.name }).toString();
+        const { data, error } = await supabase.functions.invoke(`evolution-manager?${queryStr}`, { method: "GET" as any });
+        if (!error && data?.synced) totalSynced += data.synced;
+      } catch {}
+    }
+    await fetchGroups();
+    setSyncing(false);
+    if (totalSynced > 0) {
+      toast.success(`${totalSynced} grupos sincronizados automaticamente!`, {
+        icon: <RefreshCw className="h-4 w-4 text-primary" />,
+      });
+    }
+    setTimeout(() => setSyncBanner(false), 2000);
+  };
+
   useEffect(() => {
     if (!user) return;
-    fetchGroups();
-    fetchInstances();
 
-    // Listen for realtime changes (auto-sync from background)
+    const init = async () => {
+      await fetchGroups();
+      const insts = await fetchInstances();
+      autoSync(insts);
+    };
+    init();
+
+    // Listen for realtime changes
     const channel = supabase
       .channel('groups-sync')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'groups' },
         () => {
-          // Debounce to avoid multiple toasts during bulk sync
           if (debounceRef.current) clearTimeout(debounceRef.current);
-          setSyncBanner(true);
           debounceRef.current = setTimeout(() => {
             fetchGroups();
-            toast.success("Grupos atualizados automaticamente!", {
-              description: "Uma sincronização em segundo plano foi concluída.",
-              icon: <RefreshCw className="h-4 w-4 text-primary" />,
-            });
-            setTimeout(() => setSyncBanner(false), 3000);
           }, 2000);
         }
       )

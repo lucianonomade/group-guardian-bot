@@ -119,14 +119,16 @@ export default function Whitelist() {
 
       let added = 0;
       for (const admin of admins) {
-        const jid = admin.id || admin.jid || "";
-        if (!jid || !jid.includes("@s.whatsapp.net")) continue;
+        // Evolution API returns phoneNumber with @s.whatsapp.net format
+        const jid = admin.phoneNumber || admin.id || admin.jid || "";
+        const whatsappJid = jid.includes("@s.whatsapp.net") ? jid : "";
+        if (!whatsappJid) continue;
         
         const { error } = await supabase.from("whitelist").upsert(
           {
             user_id: user!.id,
             group_id: groupId,
-            participant_jid: jid,
+            participant_jid: whatsappJid,
             participant_name: admin.pushName || admin.name || null,
           },
           { onConflict: "user_id,group_id,participant_jid" }

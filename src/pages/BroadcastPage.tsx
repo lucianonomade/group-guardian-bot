@@ -10,10 +10,17 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Megaphone, Search, ImagePlus, Send, Loader2, Trash2, Clock, CheckCircle, XCircle, Users, RefreshCw } from "lucide-react";
+import { Megaphone, Search, ImagePlus, Send, Loader2, Trash2, Clock, CheckCircle, XCircle, Users, RefreshCw, CalendarIcon, Timer } from "lucide-react";
 import { motion } from "framer-motion";
 import { pageHeader, fadeUpItem, staggerContainer, scaleUpItem } from "@/lib/animations";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface Instance {
   id: string;
@@ -36,6 +43,7 @@ interface Broadcast {
   sent_count: number;
   total_count: number;
   created_at: string;
+  scheduled_at: string | null;
 }
 
 export default function BroadcastPage() {
@@ -51,6 +59,10 @@ export default function BroadcastPage() {
   const [loadingGroups, setLoadingGroups] = useState(false);
   const [history, setHistory] = useState<Broadcast[]>([]);
   const [searchGroups, setSearchGroups] = useState("");
+  const [isScheduled, setIsScheduled] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState<Date | undefined>(undefined);
+  const [scheduledHour, setScheduledHour] = useState("12");
+  const [scheduledMinute, setScheduledMinute] = useState("00");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {

@@ -136,6 +136,7 @@ Deno.serve(async (req) => {
           events: [
             'MESSAGES_UPSERT',
             'CONNECTION_UPDATE',
+            'GROUPS_PARTICIPANTS_UPDATE',
           ],
         }),
       })
@@ -207,7 +208,7 @@ Deno.serve(async (req) => {
             url: webhookUrl,
             webhook_by_events: false,
             webhook_base64: false,
-            events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
+            events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE', 'GROUPS_PARTICIPANTS_UPDATE'],
           }),
         })
       }

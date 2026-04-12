@@ -8,8 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Users, Search, RefreshCw } from "lucide-react";
+import { Users, Search, RefreshCw, MessageSquare, Save } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { pageHeader, staggerContainer, fadeUpItem, tableRowItem } from "@/lib/animations";
 
@@ -20,6 +23,7 @@ interface Group {
   is_monitored: boolean;
   participant_count: number;
   instance_id: string;
+  welcome_message: string | null;
 }
 
 interface Instance {
@@ -37,6 +41,10 @@ export default function Groups() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [syncBanner, setSyncBanner] = useState(false);
+  const [editingGroup, setEditingGroup] = useState<Group | null>(null);
+  const [welcomeMsg, setWelcomeMsg] = useState("");
+  const [savingWelcome, setSavingWelcome] = useState(false);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchGroups = async () => {
@@ -101,6 +109,22 @@ export default function Groups() {
   const toggleMonitor = async (group: Group) => {
     await supabase.from("groups").update({ is_monitored: !group.is_monitored }).eq("id", group.id);
     setGroups(prev => prev.map(g => g.id === group.id ? { ...g, is_monitored: !g.is_monitored } : g));
+  };
+
+  const openWelcomeEditor = (group: Group) => {
+    setEditingGroup(group);
+    setWelcomeMsg(group.welcome_message || "");
+  };
+
+  const saveWelcomeMessage = async () => {
+    if (!editingGroup) return;
+    setSavingWelcome(true);
+    const message = welcomeMsg.trim() || null;
+    await supabase.from("groups").update({ welcome_message: message } as any).eq("id", editingGroup.id);
+    setGroups(prev => prev.map(g => g.id === editingGroup.id ? { ...g, welcome_message: message } : g));
+    toast.success(message ? "Mensagem de boas-vindas salva!" : "Mensagem de boas-vindas removida!");
+    setEditingGroup(null);
+    setSavingWelcome(false);
   };
 
   const filtered = groups.filter(g => g.name.toLowerCase().includes(search.toLowerCase()));

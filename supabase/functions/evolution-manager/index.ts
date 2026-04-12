@@ -345,6 +345,100 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ success: true, synced: syncedCount }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
+    // FETCH ALL GROUPS (for broadcast - no admin filter)
+    if (action === 'fetch-all-groups') {
+      const instanceName = url.searchParams.get('instanceName')
+      if (!instanceName) {
+        return new Response(JSON.stringify({ error: 'instanceName required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
+
+      const groupsRes = await fetch(`${EVOLUTION_API_URL}/group/fetchAllGroups/${instanceName}`, {
+        headers: evoHeaders,
+      })
+      if (!groupsRes.ok) {
+        return new Response(JSON.stringify({ error: 'Failed to fetch groups' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
+      const groupsRaw = await groupsRes.json()
+      const groupsData = Array.isArray(groupsRaw) ? groupsRaw : groupsRaw?.data || []
+
+      const groups = groupsData.map((g: any) => ({
+        jid: g.id || g.jid,
+        name: g.subject || g.name || g.id || g.jid,
+        size: g.size || g.participants?.length || 0,
+      }))
+
+      return new Response(JSON.stringify({ groups }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+
+    // SEND BROADCAST
+    if (action === 'send-broadcast' && req.method === 'POST') {
+      const { broadcastId } = await req.json()
+      if (!broadcastId) {
+        return new Response(JSON.stringify({ error: 'broadcastId required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
+
+      const serviceSupabase = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      )
+
+      const { data: broadcast } = await serviceSupabase
+        .from('broadcasts')
+        .select('*, instances(*)')
+        .eq('id', broadcastId)
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      if (!broadcast) {
+        return new Response(JSON.stringify({ error: 'Broadcast not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
+
+      const instance = broadcast.instances
+      const targetGroups = broadcast.target_groups || []
+
+      await serviceSupabase.from('broadcasts').update({ status: 'sending', total_count: targetGroups.length, sent_count: 0 }).eq('id', broadcastId)
+
+      let sentCount = 0
+
+      for (const groupJid of targetGroups) {
+        try {
+          if (broadcast.image_url) {
+            // Send image with caption
+            await fetch(`${EVOLUTION_API_URL}/message/sendMedia/${instance.name}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', apikey: EVOLUTION_API_KEY },
+              body: JSON.stringify({
+                number: groupJid,
+                mediatype: 'image',
+                media: broadcast.image_url,
+                caption: broadcast.message,
+              }),
+            })
+          } else {
+            // Send text only
+            await fetch(`${EVOLUTION_API_URL}/message/sendText/${instance.name}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', apikey: EVOLUTION_API_KEY },
+              body: JSON.stringify({
+                number: groupJid,
+                text: broadcast.message,
+              }),
+            })
+          }
+          sentCount++
+          // Small delay between messages to avoid rate limiting
+          await new Promise(r => setTimeout(r, 1500))
+        } catch (e) {
+          console.error('Failed to send to', groupJid, e)
+        }
+      }
+
+      const finalStatus = sentCount === targetGroups.length ? 'sent' : sentCount > 0 ? 'partial' : 'failed'
+      await serviceSupabase.from('broadcasts').update({ status: finalStatus, sent_count: sentCount }).eq('id', broadcastId)
+
+      return new Response(JSON.stringify({ success: true, sent: sentCount, total: targetGroups.length, status: finalStatus }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+
     return new Response(JSON.stringify({ error: 'Invalid action' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
   } catch (err) {

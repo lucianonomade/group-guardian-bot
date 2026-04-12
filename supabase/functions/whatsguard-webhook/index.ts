@@ -48,13 +48,20 @@ async function isParticipantAdmin(
 
 // Helper: extract mentioned JID from message
 function extractMentionedJid(messageData: any, text: string): string | null {
-  // Check Evolution API mentions
+  // Check Evolution API mentions from extendedTextMessage
   const contextInfo = messageData?.message?.extendedTextMessage?.contextInfo;
   const mentioned = contextInfo?.mentionedJid;
   if (mentioned && mentioned.length > 0) return mentioned[0];
 
-  // Try to extract from text: !ban 5511999999999
-  const parts = text.trim().split(/\s+/);
+  // Check top-level contextInfo (Evolution API v2 sometimes puts it here)
+  const topContextInfo = messageData?.contextInfo;
+  const topMentioned = topContextInfo?.mentionedJid;
+  if (topMentioned && topMentioned.length > 0) return topMentioned[0];
+
+  // Try to extract from text: !ban 5511999999999 or !ban @5511999999999
+  // Remove Unicode bidirectional characters that WhatsApp adds around mentions
+  const cleanText = text.replace(/[\u2068\u2069\u200e\u200f\u202a-\u202e]/g, "");
+  const parts = cleanText.trim().split(/\s+/);
   if (parts.length >= 2) {
     const target = parts[1].replace(/[@+]/g, "");
     if (/^\d{10,15}$/.test(target)) return `${target}@s.whatsapp.net`;

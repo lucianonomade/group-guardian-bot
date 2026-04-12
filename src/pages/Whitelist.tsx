@@ -93,6 +93,57 @@ export default function Whitelist() {
     onError: () => toast.error("Erro ao remover"),
   });
 
+  const importAdmins = async (groupId: string) => {
+    const group = groups?.find((g: any) => g.id === groupId);
+    if (!group || !group.instances) return;
+    
+    setImportingGroupId(groupId);
+    try {
+      const instance = group.instances as any;
+      const res = await fetch(
+        `${instance.api_url}/group/participants/${instance.name}?groupJid=${group.group_jid}`,
+        { headers: { apikey: instance.api_key } }
+      );
+      const data = await res.json();
+      
+      // Extract admin participants
+      const participants = data?.participants || data || [];
+      const admins = participants.filter(
+        (p: any) => p.admin === "admin" || p.admin === "superadmin"
+      );
+
+      if (!admins.length) {
+        toast.info("Nenhum admin encontrado neste grupo");
+        return;
+      }
+
+      let added = 0;
+      for (const admin of admins) {
+        const jid = admin.id || admin.jid || "";
+        if (!jid || !jid.includes("@s.whatsapp.net")) continue;
+        
+        const { error } = await supabase.from("whitelist").upsert(
+          {
+            user_id: user!.id,
+            group_id: groupId,
+            participant_jid: jid,
+            participant_name: admin.pushName || admin.name || null,
+          },
+          { onConflict: "user_id,group_id,participant_jid" }
+        );
+        if (!error) added++;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["whitelist"] });
+      toast.success(`${added} admin(s) importado(s) para a whitelist!`);
+    } catch (e) {
+      console.error("Import admins error:", e);
+      toast.error("Erro ao importar admins");
+    } finally {
+      setImportingGroupId(null);
+    }
+  };
+
   const filtered = filterGroupId === "all"
     ? whitelist
     : whitelist?.filter((w: any) => w.group_id === filterGroupId);

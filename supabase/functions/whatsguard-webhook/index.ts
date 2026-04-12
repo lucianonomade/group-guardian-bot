@@ -141,14 +141,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // DEBUG: Log the full data structure to understand Evolution API format
-    console.log("FULL DATA KEYS:", JSON.stringify(Object.keys(messageData)));
     const msgObj = messageData.message;
-    console.log("MESSAGE KEYS:", msgObj ? JSON.stringify(Object.keys(msgObj)) : "null");
-    console.log("messageType:", messageData.messageType);
-    console.log("CONVERSATION VALUE:", JSON.stringify(msgObj?.conversation));
-    console.log("CONVERSATION TYPE:", typeof msgObj?.conversation);
-    console.log("RAW KEY FIELD:", JSON.stringify(messageData.key));
 
     const key = messageData.key;
     const remoteJid = key?.remoteJid;

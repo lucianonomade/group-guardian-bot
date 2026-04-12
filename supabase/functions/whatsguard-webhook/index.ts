@@ -208,7 +208,7 @@ Deno.serve(async (req) => {
       console.log("BANNING user:", participantJid, "using alt:", participantAlt);
       try {
         const banRes = await fetch(`${instance.api_url}/group/updateParticipant/${instance.name}`, {
-          method: "PUT",
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
             apikey: instance.api_key,

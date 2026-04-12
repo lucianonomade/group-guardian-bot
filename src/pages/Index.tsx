@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, AlertTriangle, Ban, Shield, Activity, TrendingUp } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface Stats {
   groups: number;
@@ -20,6 +21,33 @@ interface ActionLog {
   details: string | null;
   created_at: string;
 }
+
+const containerVariants = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.1 },
+  },
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 24, scale: 0.96 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { type: "spring" as const, stiffness: 260, damping: 20 },
+  },
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" as const } },
+};
+
+const logItemVariants = {
+  hidden: { opacity: 0, x: -12 },
+  visible: { opacity: 1, x: 0 },
+};
 
 export default function Index() {
   const { user } = useAuth();
@@ -73,14 +101,28 @@ export default function Index() {
   return (
     <DashboardLayout>
       <div className="space-y-8">
-        <div>
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
           <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
           <p className="mt-1 text-sm text-muted-foreground">Visão geral da moderação dos seus grupos</p>
-        </div>
+        </motion.div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <motion.div
+          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
           {statCards.map(card => (
-            <div key={card.label} className="stat-card group cursor-default">
+            <motion.div
+              key={card.label}
+              variants={cardVariants}
+              whileHover={{ scale: 1.03, transition: { duration: 0.2 } }}
+              className="stat-card group cursor-default"
+            >
               <div className={`absolute inset-0 bg-gradient-to-br ${card.gradient} opacity-40 transition-opacity group-hover:opacity-60`} />
               <div className="relative">
                 <div className="flex items-center justify-between">
@@ -91,53 +133,62 @@ export default function Index() {
                 </div>
                 <p className="mt-3 text-3xl font-bold tracking-tight">{loading ? "—" : card.value}</p>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
 
-        <Card className="glass-card overflow-hidden">
-          <CardHeader className="border-b border-border/30 pb-4">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Activity className="h-4 w-4 text-primary" />
-              Atividade Recente
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {loading ? (
-              <p className="p-6 text-sm text-muted-foreground">Carregando...</p>
-            ) : recentLogs.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 p-10 text-muted-foreground">
-                <TrendingUp className="h-8 w-8 opacity-30" />
-                <p className="text-sm">Nenhuma atividade registrada ainda.</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-border/20">
-                {recentLogs.map(log => {
-                  const { label, color } = actionTypeLabel(log.action_type);
-                  return (
-                    <div key={log.id} className="flex items-center justify-between px-5 py-3.5 transition-colors hover:bg-muted/30">
-                      <div className="flex items-center gap-3">
-                        <div className={`h-2 w-2 rounded-full ${color.replace("text-", "bg-")} shadow-sm ${color.replace("text-", "shadow-")}/30`} />
-                        <div>
-                          <span className={`text-xs font-bold ${color}`}>{label}</span>
-                          {log.participant_name && (
-                            <span className="ml-2 text-xs text-foreground/80">— {log.participant_name}</span>
-                          )}
-                          {log.details && (
-                            <p className="mt-0.5 text-[11px] text-muted-foreground/70">{log.details}</p>
-                          )}
+        <motion.div variants={fadeUp} initial="hidden" animate="visible">
+          <Card className="glass-card overflow-hidden">
+            <CardHeader className="border-b border-border/30 pb-4">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Activity className="h-4 w-4 text-primary" />
+                Atividade Recente
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {loading ? (
+                <p className="p-6 text-sm text-muted-foreground">Carregando...</p>
+              ) : recentLogs.length === 0 ? (
+                <div className="flex flex-col items-center gap-2 p-10 text-muted-foreground">
+                  <TrendingUp className="h-8 w-8 opacity-30" />
+                  <p className="text-sm">Nenhuma atividade registrada ainda.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-border/20">
+                  {recentLogs.map((log, i) => {
+                    const { label, color } = actionTypeLabel(log.action_type);
+                    return (
+                      <motion.div
+                        key={log.id}
+                        variants={logItemVariants}
+                        initial="hidden"
+                        animate="visible"
+                        transition={{ delay: 0.4 + i * 0.05, duration: 0.3 }}
+                        className="flex items-center justify-between px-5 py-3.5 transition-colors hover:bg-muted/30"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`h-2 w-2 rounded-full ${color.replace("text-", "bg-")} shadow-sm ${color.replace("text-", "shadow-")}/30`} />
+                          <div>
+                            <span className={`text-xs font-bold ${color}`}>{label}</span>
+                            {log.participant_name && (
+                              <span className="ml-2 text-xs text-foreground/80">— {log.participant_name}</span>
+                            )}
+                            {log.details && (
+                              <p className="mt-0.5 text-[11px] text-muted-foreground/70">{log.details}</p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <span className="text-[11px] text-muted-foreground/50 whitespace-nowrap font-mono">
-                        {new Date(log.created_at).toLocaleString("pt-BR")}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                        <span className="text-[11px] text-muted-foreground/50 whitespace-nowrap font-mono">
+                          {new Date(log.created_at).toLocaleString("pt-BR")}
+                        </span>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     </DashboardLayout>
   );

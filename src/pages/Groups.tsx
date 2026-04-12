@@ -57,76 +57,11 @@ export default function Groups() {
   const syncGroups = async (instance: Instance) => {
     setSyncing(true);
     try {
-      const res = await fetch(`${instance.api_url}/group/fetchAllGroups/${instance.name}?getParticipants=true`, {
-        headers: { apikey: instance.api_key },
-      });
-      if (!res.ok) throw new Error("Falha ao buscar grupos");
-      const data = await res.json();
-      const groupsData = Array.isArray(data) ? data : data?.data || [];
-
-      const infoRes = await fetch(`${instance.api_url}/instance/fetchInstances`, {
-        headers: { apikey: instance.api_key },
-      });
-      const instancesData = await infoRes.json();
-      const thisInstance = Array.isArray(instancesData) 
-        ? instancesData.find((i: any) => i.name === instance.name)
-        : null;
-      const ownerJid = thisInstance?.ownerJid || "";
-
-      let syncedCount = 0;
-      const adminJids = new Set<string>();
-
-      for (const g of groupsData) {
-        const jid = g.id || g.jid;
-        const name = g.subject || g.name || jid;
-        const count = g.size || g.participants?.length || 0;
-        const participants = g.participants || [];
-
-        const isAdmin = participants.some((p: any) => 
-          (p.phoneNumber === ownerJid || p.id === ownerJid) && 
-          (p.admin === "admin" || p.admin === "superadmin")
-        );
-
-        if (!isAdmin) continue;
-
-        adminJids.add(jid);
-        syncedCount++;
-
-        const { data: existing } = await supabase
-          .from("groups")
-          .select("id")
-          .eq("group_jid", jid)
-          .eq("instance_id", instance.id)
-          .maybeSingle();
-
-        if (existing) {
-          await supabase.from("groups").update({ name, participant_count: count }).eq("id", existing.id);
-        } else {
-          await supabase.from("groups").insert({
-            user_id: user!.id,
-            instance_id: instance.id,
-            group_jid: jid,
-            name,
-            participant_count: count,
-            is_monitored: true,
-          });
-        }
-      }
-
-      const { data: existingGroups } = await supabase
-        .from("groups")
-        .select("id, group_jid")
-        .eq("instance_id", instance.id);
-
-      if (existingGroups) {
-        for (const eg of existingGroups) {
-          if (!adminJids.has(eg.group_jid)) {
-            await supabase.from("groups").delete().eq("id", eg.id);
-          }
-        }
-      }
-
-      toast.success(`${syncedCount} grupos onde você é admin sincronizados!`);
+      const queryStr = new URLSearchParams({ action: "sync-groups", instanceName: instance.name }).toString();
+      const { data, error } = await supabase.functions.invoke(`evolution-manager?${queryStr}`, { method: "GET" as any });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`${data.synced} grupos sincronizados!`);
       fetchGroups();
     } catch (err: any) {
       toast.error(err.message || "Erro ao sincronizar");

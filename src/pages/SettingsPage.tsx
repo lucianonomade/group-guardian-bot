@@ -87,6 +87,18 @@ export default function SettingsPage() {
     setCreating(false);
   };
 
+  const syncGroups = async (instanceName: string) => {
+    try {
+      const data = await invokeEvolution("sync-groups", { params: { instanceName } });
+      if (data?.success) {
+        toast.success(`${data.synced} grupo(s) sincronizado(s) automaticamente!`);
+      }
+    } catch {
+      // Non-fatal: user can sync manually later
+      console.log("Auto-sync groups failed, user can sync manually");
+    }
+  };
+
   const startPolling = (instanceName: string) => {
     if (pollRef.current) clearInterval(pollRef.current);
 
@@ -100,6 +112,8 @@ export default function SettingsPage() {
           setQrData(null);
           toast.success("WhatsApp conectado com sucesso!");
           fetchInstances();
+          // Auto-sync groups after connection
+          syncGroups(instanceName);
         }
       } catch {
         // ignore polling errors

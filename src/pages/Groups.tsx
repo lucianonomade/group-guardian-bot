@@ -70,7 +70,14 @@ export default function Groups() {
       try {
         const queryStr = new URLSearchParams({ action: "sync-groups", instanceName: inst.name }).toString();
         const { data, error } = await supabase.functions.invoke(`evolution-manager?${queryStr}`, { method: "GET" as any });
-        if (!error && data?.synced) totalSynced += data.synced;
+        if (data?.error) {
+          const detail = data.detail || data.error;
+          if (detail?.includes?.("Connection Closed")) {
+            toast.error(`Instância "${inst.name}" desconectada. Reconecte nas configurações.`);
+          }
+        } else if (!error && data?.synced) {
+          totalSynced += data.synced;
+        }
       } catch {}
     }
     await fetchGroups();

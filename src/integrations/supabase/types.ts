@@ -55,6 +55,39 @@ export type Database = {
           },
         ]
       }
+      antiflood_settings: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          is_enabled: boolean
+          max_messages: number
+          time_window_seconds: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          is_enabled?: boolean
+          max_messages?: number
+          time_window_seconds?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          is_enabled?: boolean
+          max_messages?: number
+          time_window_seconds?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       bans: {
         Row: {
           banned_at: string

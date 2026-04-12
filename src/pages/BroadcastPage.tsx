@@ -180,6 +180,19 @@ export default function BroadcastPage() {
         imageUrl = urlData.publicUrl;
       }
 
+      // Build scheduled_at timestamp
+      let scheduledAt: string | null = null;
+      if (isScheduled && scheduledDate) {
+        const dt = new Date(scheduledDate);
+        dt.setHours(parseInt(scheduledHour), parseInt(scheduledMinute), 0, 0);
+        if (dt <= new Date()) {
+          toast.error("A data/hora deve ser no futuro");
+          setSending(false);
+          return;
+        }
+        scheduledAt = dt.toISOString();
+      }
+
       // Create broadcast record
       const { data: broadcast, error: insertError } = await supabase
         .from("broadcasts")
@@ -189,26 +202,34 @@ export default function BroadcastPage() {
           message: message.trim(),
           image_url: imageUrl,
           target_groups: Array.from(selectedGroups),
-          status: "pending",
+          status: scheduledAt ? "scheduled" : "pending",
           total_count: selectedGroups.size,
+          scheduled_at: scheduledAt,
         } as any)
         .select()
         .single();
 
       if (insertError) throw insertError;
 
-      // Trigger send
-      const result = await invokeEvolution("send-broadcast", {
-        method: "POST",
-        body: { broadcastId: broadcast.id },
-      });
-
-      toast.success(`Divulgação enviada para ${result.sent}/${result.total} grupos!`);
+      if (scheduledAt) {
+        toast.success(`Divulgação agendada para ${format(new Date(scheduledAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}!`);
+      } else {
+        // Trigger send immediately
+        const result = await invokeEvolution("send-broadcast", {
+          method: "POST",
+          body: { broadcastId: broadcast.id },
+        });
+        toast.success(`Divulgação enviada para ${result.sent}/${result.total} grupos!`);
+      }
 
       // Reset form
       setMessage("");
       removeImage();
       setSelectedGroups(new Set());
+      setIsScheduled(false);
+      setScheduledDate(undefined);
+      setScheduledHour("12");
+      setScheduledMinute("00");
       fetchHistory();
     } catch (err: any) {
       toast.error(err.message || "Erro ao enviar divulgação");
@@ -222,6 +243,7 @@ export default function BroadcastPage() {
 
   const statusConfig: Record<string, { label: string; icon: any; className: string }> = {
     pending: { label: "Pendente", icon: Clock, className: "bg-amber-500/15 text-amber-400 border-amber-500/20" },
+    scheduled: { label: "Agendado", icon: Timer, className: "bg-violet-500/15 text-violet-400 border-violet-500/20" },
     sending: { label: "Enviando", icon: Loader2, className: "bg-blue-500/15 text-blue-400 border-blue-500/20" },
     sent: { label: "Enviado", icon: CheckCircle, className: "bg-primary/15 text-primary border-primary/20" },
     partial: { label: "Parcial", icon: CheckCircle, className: "bg-amber-500/15 text-amber-400 border-amber-500/20" },

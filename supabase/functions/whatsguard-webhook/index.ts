@@ -64,6 +64,8 @@ Deno.serve(async (req) => {
 
     const groupJid = remoteJid;
     const participantJid = key?.participant || "";
+    // participantAlt has the @s.whatsapp.net format needed for API calls
+    const participantAlt = key?.participantAlt || participantJid;
     const messageId = key?.id;
     const pushName = messageData.pushName || "";
     

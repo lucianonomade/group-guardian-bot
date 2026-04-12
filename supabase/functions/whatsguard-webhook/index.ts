@@ -48,13 +48,20 @@ async function isParticipantAdmin(
 
 // Helper: extract mentioned JID from message
 function extractMentionedJid(messageData: any, text: string): string | null {
-  // Check Evolution API mentions
+  // Check Evolution API mentions from extendedTextMessage
   const contextInfo = messageData?.message?.extendedTextMessage?.contextInfo;
   const mentioned = contextInfo?.mentionedJid;
   if (mentioned && mentioned.length > 0) return mentioned[0];
 
-  // Try to extract from text: !ban 5511999999999
-  const parts = text.trim().split(/\s+/);
+  // Check top-level contextInfo (Evolution API v2 sometimes puts it here)
+  const topContextInfo = messageData?.contextInfo;
+  const topMentioned = topContextInfo?.mentionedJid;
+  if (topMentioned && topMentioned.length > 0) return topMentioned[0];
+
+  // Try to extract from text: !ban 5511999999999 or !ban @5511999999999
+  // Remove Unicode bidirectional characters that WhatsApp adds around mentions
+  const cleanText = text.replace(/[\u2068\u2069\u200e\u200f\u202a-\u202e]/g, "");
+  const parts = cleanText.trim().split(/\s+/);
   if (parts.length >= 2) {
     const target = parts[1].replace(/[@+]/g, "");
     if (/^\d{10,15}$/.test(target)) return `${target}@s.whatsapp.net`;
@@ -153,7 +160,21 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (key?.fromMe) {
+    // Extract text BEFORE fromMe check so we can allow commands from bot owner
+    const msg = messageData.message;
+    const messageText = msg?.conversation ||
+                        msg?.extendedTextMessage?.text ||
+                        msg?.imageMessage?.caption ||
+                        msg?.videoMessage?.caption ||
+                        msg?.buttonsResponseMessage?.selectedDisplayText ||
+                        msg?.listResponseMessage?.title ||
+                        msg?.templateButtonReplyMessage?.selectedDisplayText ||
+                        messageData.body ||
+                        messageData.text ||
+                        "";
+
+    // Skip own messages UNLESS it's a command (bot owner sending commands)
+    if (key?.fromMe && !messageText.trim().startsWith("!")) {
       return new Response(JSON.stringify({ status: "ignored", reason: "own message" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -165,18 +186,7 @@ Deno.serve(async (req) => {
     const messageId = key?.id;
     const pushName = messageData.pushName || "";
 
-    const msg = messageData.message;
-    // Try all known Evolution API text fields
-    const messageText = msg?.conversation ||
-                        msg?.extendedTextMessage?.text ||
-                        msg?.imageMessage?.caption ||
-                        msg?.videoMessage?.caption ||
-                        msg?.buttonsResponseMessage?.selectedDisplayText ||
-                        msg?.listResponseMessage?.title ||
-                        msg?.templateButtonReplyMessage?.selectedDisplayText ||
-                        messageData.body ||
-                        messageData.text ||
-                        "";
+    // messageText already extracted above (before fromMe check)
 
     console.log("Participant:", participantJid, "PushName:", pushName);
     console.log("Message text extracted:", JSON.stringify(messageText)?.substring(0, 200));
@@ -213,8 +223,8 @@ Deno.serve(async (req) => {
       if (supportedCommands.includes(command)) {
         console.log("Command detected:", command, "from", participantJid);
 
-        // Verify sender is admin
-        const senderIsAdmin = await isParticipantAdmin(
+        // Verify sender is admin (skip check if fromMe - bot owner is always authorized)
+        const senderIsAdmin = key?.fromMe ? true : await isParticipantAdmin(
           instance.api_url, instance.api_key, instance.name, groupJid, participantAlt
         );
 

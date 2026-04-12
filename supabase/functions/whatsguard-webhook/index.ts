@@ -188,7 +188,7 @@ Deno.serve(async (req) => {
 
     if (newWarningNumber >= 3) {
       // BAN - 3rd strike
-      console.log("BANNING user:", participantJid);
+      console.log("BANNING user:", participantJid, "using alt:", participantAlt);
       try {
         const banRes = await fetch(`${instance.api_url}/group/updateParticipant/${instance.name}`, {
           method: "PUT",
@@ -202,7 +202,8 @@ Deno.serve(async (req) => {
             participants: [participantAlt],
           }),
         });
-        console.log("Ban response:", banRes.status);
+        const banBody = await banRes.text();
+        console.log("Ban response:", banRes.status, banBody);
       } catch (e) {
         console.error("Failed to remove participant:", e);
       }

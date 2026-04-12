@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   Shield, LayoutDashboard, Users, AlertTriangle, Ban,
-  MessageSquareOff, Settings, LogOut, Menu, X
+  MessageSquareOff, ShieldCheck, Settings, LogOut, Menu, X
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,7 @@ const navItems = [
   { href: "/warnings", label: "Avisos", icon: AlertTriangle },
   { href: "/bans", label: "Banimentos", icon: Ban },
   { href: "/blocked-words", label: "Palavras Bloqueadas", icon: MessageSquareOff },
+  { href: "/whitelist", label: "Whitelist", icon: ShieldCheck },
   { href: "/settings", label: "Configurações", icon: Settings },
 ];
 

@@ -108,6 +108,23 @@ Deno.serve(async (req) => {
 
     const instance = group.instances;
     const userId = group.user_id;
+
+    // Check whitelist - skip moderation for whitelisted participants
+    const { data: whitelistEntry } = await supabase
+      .from("whitelist")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("group_id", group.id)
+      .eq("participant_jid", participantAlt)
+      .maybeSingle();
+
+    if (whitelistEntry) {
+      console.log("Participant is whitelisted, skipping:", participantAlt);
+      return new Response(JSON.stringify({ status: "ignored", reason: "whitelisted" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     let violation: string | null = null;
     let violationType: string | null = null;
 

@@ -12,6 +12,7 @@ import Warnings from "./pages/Warnings";
 import Bans from "./pages/Bans";
 import BlockedWords from "./pages/BlockedWords";
 import SettingsPage from "./pages/SettingsPage";
+import Whitelist from "./pages/Whitelist";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/warnings" element={<ProtectedRoute><Warnings /></ProtectedRoute>} />
             <Route path="/bans" element={<ProtectedRoute><Bans /></ProtectedRoute>} />
             <Route path="/blocked-words" element={<ProtectedRoute><BlockedWords /></ProtectedRoute>} />
+            <Route path="/whitelist" element={<ProtectedRoute><Whitelist /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

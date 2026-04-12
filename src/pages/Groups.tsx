@@ -189,7 +189,7 @@ export default function Groups() {
                            <Button
                              variant="ghost"
                              size="sm"
-                             onClick={() => openWelcomeEditor(group)}
+                             onClick={() => setEditingGroup(group)}
                              className={`text-xs gap-1.5 ${group.welcome_message ? "text-primary" : "text-muted-foreground/50"}`}
                            >
                              <MessageSquare className="h-3 w-3" />

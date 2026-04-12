@@ -136,7 +136,9 @@ Deno.serve(async (req) => {
 
     // DEBUG: Log the full data structure to understand Evolution API format
     console.log("FULL DATA KEYS:", JSON.stringify(Object.keys(messageData)));
-    console.log("RAW MESSAGE FIELD:", JSON.stringify(messageData.message)?.substring(0, 500));
+    const msgObj = messageData.message;
+    console.log("MESSAGE KEYS:", msgObj ? JSON.stringify(Object.keys(msgObj)) : "null");
+    console.log("messageType:", messageData.messageType);
     console.log("RAW KEY FIELD:", JSON.stringify(messageData.key));
 
     const key = messageData.key;

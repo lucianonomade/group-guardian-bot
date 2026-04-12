@@ -64,6 +64,8 @@ Deno.serve(async (req) => {
 
     const groupJid = remoteJid;
     const participantJid = key?.participant || "";
+    // participantAlt has the @s.whatsapp.net format needed for API calls
+    const participantAlt = key?.participantAlt || participantJid;
     const messageId = key?.id;
     const pushName = messageData.pushName || "";
     
@@ -154,7 +156,7 @@ Deno.serve(async (req) => {
           id: messageId,
           remoteJid: groupJid,
           fromMe: false,
-          participant: participantJid,
+          participant: participantAlt,
         }),
       });
       console.log("Delete message response:", deleteRes.status);
@@ -186,7 +188,7 @@ Deno.serve(async (req) => {
 
     if (newWarningNumber >= 3) {
       // BAN - 3rd strike
-      console.log("BANNING user:", participantJid);
+      console.log("BANNING user:", participantJid, "using alt:", participantAlt);
       try {
         const banRes = await fetch(`${instance.api_url}/group/updateParticipant/${instance.name}`, {
           method: "PUT",
@@ -197,10 +199,11 @@ Deno.serve(async (req) => {
           body: JSON.stringify({
             groupJid: groupJid,
             action: "remove",
-            participants: [participantJid],
+            participants: [participantAlt],
           }),
         });
-        console.log("Ban response:", banRes.status);
+        const banBody = await banRes.text();
+        console.log("Ban response:", banRes.status, banBody);
       } catch (e) {
         console.error("Failed to remove participant:", e);
       }

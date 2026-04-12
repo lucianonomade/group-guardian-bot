@@ -137,6 +137,7 @@ export type Database = {
           participant_count: number | null
           updated_at: string
           user_id: string
+          welcome_message: string | null
         }
         Insert: {
           created_at?: string
@@ -148,6 +149,7 @@ export type Database = {
           participant_count?: number | null
           updated_at?: string
           user_id: string
+          welcome_message?: string | null
         }
         Update: {
           created_at?: string
@@ -159,6 +161,7 @@ export type Database = {
           participant_count?: number | null
           updated_at?: string
           user_id?: string
+          welcome_message?: string | null
         }
         Relationships: [
           {

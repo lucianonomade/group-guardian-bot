@@ -1,0 +1,1 @@
+ALTER TABLE public.groups ADD COLUMN welcome_message text DEFAULT null;

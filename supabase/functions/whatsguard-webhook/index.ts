@@ -22,6 +22,50 @@ Deno.serve(async (req) => {
     // Evolution API v2 format: { event, instance, data, ... }
     const event = body.event;
     
+    // Handle group participant events (welcome message)
+    if (event === "group.participants.update" || event === "groups.participants.update") {
+      const action = body.data?.action;
+      const participants = body.data?.participants || [];
+      const groupJid = body.data?.id || body.data?.groupJid;
+
+      if (action === "add" && groupJid && participants.length > 0) {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        const { data: group } = await supabase
+          .from("groups")
+          .select("*, instances(*)")
+          .eq("group_jid", groupJid)
+          .eq("is_monitored", true)
+          .maybeSingle();
+
+        if (group?.welcome_message && group.instances) {
+          const instance = group.instances;
+          for (const participant of participants) {
+            const pJid = typeof participant === "string" ? participant : participant.id || participant;
+            const pName = pJid.split("@")[0];
+            const text = group.welcome_message.replace(/\{\{nome\}\}/gi, pName);
+
+            try {
+              await fetch(`${instance.api_url}/message/sendText/${instance.name}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", apikey: instance.api_key },
+                body: JSON.stringify({ number: groupJid, text }),
+              });
+              console.log("Welcome message sent to", pJid, "in", groupJid);
+            } catch (e) {
+              console.error("Failed to send welcome message:", e);
+            }
+          }
+        }
+      }
+
+      return new Response(JSON.stringify({ status: "processed", action: "welcome" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Only process message events
     if (event !== "messages.upsert") {
       console.log("Ignored event:", event);

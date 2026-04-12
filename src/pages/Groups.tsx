@@ -45,7 +45,6 @@ export default function Groups() {
   const [welcomeMsg, setWelcomeMsg] = useState("");
   const [savingWelcome, setSavingWelcome] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchGroups = async () => {
     const { data } = await supabase.from("groups").select("*").order("name");

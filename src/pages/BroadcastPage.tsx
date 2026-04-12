@@ -445,24 +445,88 @@ export default function BroadcastPage() {
                   </div>
                 )}
 
+                {/* Schedule toggle */}
+                <div className="space-y-3 rounded-lg border border-border/30 bg-muted/10 p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Timer className="h-4 w-4 text-primary" />
+                      <Label className="text-xs font-medium">Agendar envio</Label>
+                    </div>
+                    <Switch checked={isScheduled} onCheckedChange={setIsScheduled} />
+                  </div>
+
+                  {isScheduled && (
+                    <div className="flex flex-wrap gap-3 pt-1">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn("text-xs h-9 px-3 justify-start", !scheduledDate && "text-muted-foreground")}
+                          >
+                            <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                            {scheduledDate ? format(scheduledDate, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={scheduledDate}
+                            onSelect={setScheduledDate}
+                            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                            initialFocus
+                            className={cn("p-3 pointer-events-auto")}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <div className="flex items-center gap-1">
+                        <Select value={scheduledHour} onValueChange={setScheduledHour}>
+                          <SelectTrigger className="w-16 h-9 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0")).map(h => (
+                              <SelectItem key={h} value={h} className="text-xs">{h}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <span className="text-xs text-muted-foreground font-bold">:</span>
+                        <Select value={scheduledMinute} onValueChange={setScheduledMinute}>
+                          <SelectTrigger className="w-16 h-9 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {["00", "15", "30", "45"].map(m => (
+                              <SelectItem key={m} value={m} className="text-xs">{m}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {/* Send button */}
                 <div className="flex items-center justify-between pt-2">
                   <p className="text-xs text-muted-foreground">
                     {selectedGroups.size > 0
-                      ? `Será enviado para ${selectedGroups.size} grupo(s)`
+                      ? isScheduled
+                        ? `Será agendado para ${selectedGroups.size} grupo(s)`
+                        : `Será enviado para ${selectedGroups.size} grupo(s)`
                       : "Selecione ao menos um grupo"}
                   </p>
                   <Button
                     onClick={sendBroadcast}
-                    disabled={sending || selectedGroups.size === 0 || !message.trim()}
+                    disabled={sending || selectedGroups.size === 0 || !message.trim() || (isScheduled && !scheduledDate)}
                     className="bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-500/90 shadow-lg shadow-primary/20"
                   >
                     {sending ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : isScheduled ? (
+                      <Timer className="mr-2 h-4 w-4" />
                     ) : (
                       <Send className="mr-2 h-4 w-4" />
                     )}
-                    {sending ? "Enviando..." : "Enviar Divulgação"}
+                    {sending ? "Processando..." : isScheduled ? "Agendar" : "Enviar Agora"}
                   </Button>
                 </div>
               </CardContent>

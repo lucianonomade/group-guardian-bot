@@ -353,7 +353,7 @@ Deno.serve(async (req) => {
       }
 
       console.log('Fetching all groups from:', `${EVOLUTION_API_URL}/group/fetchAllGroups/${instanceName}`)
-      const groupsRes = await fetch(`${EVOLUTION_API_URL}/group/fetchAllGroups/${instanceName}`, {
+      const groupsRes = await fetch(`${EVOLUTION_API_URL}/group/fetchAllGroups/${instanceName}?getParticipants=false`, {
         headers: evoHeaders,
       })
       if (!groupsRes.ok) {

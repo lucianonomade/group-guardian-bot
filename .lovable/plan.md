@@ -1,54 +1,56 @@
 
-## Sistema de Gerenciamento de Grupos WhatsApp com Evolution API
 
-### Visão Geral
-Dashboard web completo para gerenciar bot de moderação de grupos WhatsApp, integrado com Evolution API. O bot apaga links e palavras proibidas, aplica sistema de avisos (2 avisos + banimento no 3º).
+## Plano: Comandos no WhatsApp + Painel de Membros + Anti-flood
 
-### Funcionalidades
+### 1. Comandos no WhatsApp (!ban, !warn, !mute, !unmute)
 
-#### 1. Autenticação
-- Login/cadastro de administradores com Supabase Auth
-- Rotas protegidas para o dashboard
+**Webhook (`whatsguard-webhook/index.ts`):** Adicionar detecção de comandos antes da verificação de violações. Quando uma mensagem começar com `!`, verificar se o remetente é admin do grupo e executar a ação:
+- `!ban @usuario` — remove e registra ban
+- `!warn @usuario [motivo]` — adiciona aviso manual
+- `!unwarn @usuario` — reseta avisos do usuário
+- `!mute @usuario [minutos]` — (futuro) silencia temporariamente
 
-#### 2. Configuração da Instância Evolution API
-- Tela para cadastrar URL e API Key da Evolution API
-- Salvar credenciais como secrets no Supabase
-- Status de conexão da instância (online/offline)
+**Banco de dados:** Nenhuma alteração necessária — reutiliza as tabelas `warnings`, `bans` e `action_logs`.
 
-#### 3. Dashboard Principal
-- Visão geral: total de grupos monitorados, avisos dados, banimentos
-- Lista de grupos conectados com status
-- Atividade recente (últimas ações do bot)
+**Lógica:** O webhook verifica se o participante é admin do grupo via Evolution API antes de processar o comando. Comandos de não-admins são ignorados.
 
-#### 4. Gerenciamento de Grupos
-- Lista de grupos com busca e filtro
-- Detalhes do grupo: membros, avisos ativos, banimentos
-- Histórico de ações por grupo
+---
 
-#### 5. Sistema de Avisos e Banimentos
-- Tabela de avisos por usuário/grupo (0, 1, 2 avisos)
-- Histórico de banimentos
-- Possibilidade de resetar avisos manualmente
-- Possibilidade de desbanir usuários
+### 2. Painel de Membros do Grupo
 
-#### 6. Lista de Palavras Proibidas
-- CRUD completo: adicionar, editar, remover palavras
-- Categorias (palavrões, pornografia, etc.)
-- Importar/exportar lista
+**Nova action na Edge Function (`evolution-manager`):** Adicionar `fetch-group-participants` que busca os membros de um grupo específico via Evolution API.
 
-#### 7. Webhook (Edge Function)
-- Receber eventos da Evolution API (mensagens de grupo)
-- Detectar links em mensagens → apagar mensagem + enviar aviso
-- Detectar palavras proibidas → apagar mensagem + enviar aviso
-- Contabilizar avisos: no 3º, banir o usuário do grupo
-- Enviar mensagem personalizada de aviso e banimento
+**Nova página (`src/pages/GroupMembers.tsx`):** Acessível ao clicar em um grupo na lista. Exibe:
+- Lista de todos os membros com nome, JID, role (admin/membro)
+- Quantidade de avisos ativos de cada membro
+- Botões de ação rápida: dar aviso, resetar avisos, banir, adicionar à whitelist
+- Busca e filtros (por role, por nº de avisos)
 
-#### 8. Banco de Dados (Supabase)
-- Tabelas: instances, groups, warnings, bans, blocked_words
-- RLS policies para segurança
-- Triggers para contagem automática de avisos
+**Rota:** `/groups/:groupId/members`
 
-### Stack
-- **Frontend**: React + Tailwind + shadcn/ui
-- **Backend**: Supabase (Auth, Database, Edge Functions)
-- **Integração**: Evolution API via Edge Function webhook
+---
+
+### 3. Anti-flood / Rate Limit
+
+**Banco de dados:** Criar tabela `antiflood_settings` com campos:
+- `group_id`, `user_id`, `max_messages` (default 5), `time_window_seconds` (default 10), `is_enabled` (default true)
+
+**Webhook:** Adicionar verificação de flood antes das verificações de link/palavra:
+- Manter cache em memória (Map) com contagem de mensagens por participante/grupo
+- Se exceder o limite → aplicar aviso automático como violação tipo `flood`
+
+**UI na página de Grupos:** Adicionar botão de configuração anti-flood por grupo, com campos para definir limite de mensagens e janela de tempo.
+
+---
+
+### Arquivos a criar/editar
+
+| Arquivo | Ação |
+|---|---|
+| `supabase/functions/whatsguard-webhook/index.ts` | Adicionar comandos + anti-flood |
+| `supabase/functions/evolution-manager/index.ts` | Adicionar `fetch-group-participants` |
+| `src/pages/GroupMembers.tsx` | Nova página de membros |
+| `src/pages/Groups.tsx` | Link para membros |
+| `src/App.tsx` | Nova rota `/groups/:groupId/members` |
+| `supabase/migrations/..._antiflood.sql` | Tabela `antiflood_settings` com RLS |
+

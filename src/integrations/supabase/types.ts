@@ -277,6 +277,30 @@ export type Database = {
           },
         ]
       }
+      welcome_templates: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       whitelist: {
         Row: {
           created_at: string

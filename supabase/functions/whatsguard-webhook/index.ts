@@ -139,6 +139,8 @@ Deno.serve(async (req) => {
     const msgObj = messageData.message;
     console.log("MESSAGE KEYS:", msgObj ? JSON.stringify(Object.keys(msgObj)) : "null");
     console.log("messageType:", messageData.messageType);
+    console.log("CONVERSATION VALUE:", JSON.stringify(msgObj?.conversation));
+    console.log("CONVERSATION TYPE:", typeof msgObj?.conversation);
     console.log("RAW KEY FIELD:", JSON.stringify(messageData.key));
 
     const key = messageData.key;

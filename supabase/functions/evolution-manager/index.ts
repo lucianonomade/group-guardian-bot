@@ -138,8 +138,14 @@ Deno.serve(async (req) => {
       const { data: instance } = await serviceSupabase.from('instances').select('*').eq('name', instanceName).eq('user_id', user.id).maybeSingle()
       if (!instance) return new Response(JSON.stringify({ error: 'Instance not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
-      const groupsRes = await fetch(`${EVOLUTION_API_URL}/group/fetchAllGroups/${instanceName}?getParticipants=true`, { headers: evoHeaders })
-      if (!groupsRes.ok) return new Response(JSON.stringify({ error: 'Failed to fetch groups' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      const fetchUrl = `${EVOLUTION_API_URL}/group/fetchAllGroups/${instanceName}?getParticipants=true`
+      console.log('Fetching groups from:', fetchUrl)
+      const groupsRes = await fetch(fetchUrl, { headers: evoHeaders })
+      if (!groupsRes.ok) {
+        const errBody = await groupsRes.text()
+        console.error('fetchAllGroups failed:', groupsRes.status, errBody)
+        return new Response(JSON.stringify({ error: 'Failed to fetch groups', status: groupsRes.status, detail: errBody }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
       const groupsRaw = await groupsRes.json()
       const groupsData = Array.isArray(groupsRaw) ? groupsRaw : groupsRaw?.data || []
 

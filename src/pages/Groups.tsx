@@ -169,56 +169,115 @@ export default function Groups() {
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-border/30 hover:bg-transparent">
-                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Nome</TableHead>
-                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">JID</TableHead>
-                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Membros</TableHead>
-                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Status</TableHead>
-                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Monitorar</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading ? (
-                    <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-10">Carregando...</TableCell></TableRow>
-                  ) : filtered.length === 0 ? (
-                    <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-10">
-                      {instances.length === 0 ? "Configure uma instância primeiro" : "Nenhum grupo encontrado"}
-                    </TableCell></TableRow>
-                  ) : (
-                    filtered.map((group, i) => (
-                      <motion.tr
-                        key={group.id}
-                        variants={tableRowItem}
-                        initial="hidden"
-                        animate="visible"
-                        transition={{ delay: 0.2 + i * 0.04, duration: 0.3 }}
-                        className="border-b border-border/20 hover:bg-muted/10 transition-colors"
-                      >
-                        <TableCell className="font-medium text-sm">{group.name}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground/60 font-mono">{group.group_jid}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                            <Users className="h-3 w-3" />
-                            {group.participant_count}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={group.is_monitored ? "default" : "secondary"} className={group.is_monitored ? "bg-primary/15 text-primary border-primary/20 hover:bg-primary/20" : ""}>
-                            {group.is_monitored ? "Ativo" : "Inativo"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Switch checked={group.is_monitored} onCheckedChange={() => toggleMonitor(group)} />
-                        </TableCell>
-                      </motion.tr>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-    </DashboardLayout>
-  );
+                   <TableRow className="border-border/30 hover:bg-transparent">
+                     <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Nome</TableHead>
+                     <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Membros</TableHead>
+                     <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Boas-vindas</TableHead>
+                     <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Status</TableHead>
+                     <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Monitorar</TableHead>
+                   </TableRow>
+                 </TableHeader>
+                 <TableBody>
+                   {loading ? (
+                     <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-10">Carregando...</TableCell></TableRow>
+                   ) : filtered.length === 0 ? (
+                     <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-10">
+                       {instances.length === 0 ? "Configure uma instância primeiro" : "Nenhum grupo encontrado"}
+                     </TableCell></TableRow>
+                   ) : (
+                     filtered.map((group, i) => (
+                       <motion.tr
+                         key={group.id}
+                         variants={tableRowItem}
+                         initial="hidden"
+                         animate="visible"
+                         transition={{ delay: 0.2 + i * 0.04, duration: 0.3 }}
+                         className="border-b border-border/20 hover:bg-muted/10 transition-colors"
+                       >
+                         <TableCell className="font-medium text-sm">{group.name}</TableCell>
+                         <TableCell>
+                           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                             <Users className="h-3 w-3" />
+                             {group.participant_count}
+                           </div>
+                         </TableCell>
+                         <TableCell>
+                           <Button
+                             variant="ghost"
+                             size="sm"
+                             onClick={() => openWelcomeEditor(group)}
+                             className={`text-xs gap-1.5 ${group.welcome_message ? "text-primary" : "text-muted-foreground/50"}`}
+                           >
+                             <MessageSquare className="h-3 w-3" />
+                             {group.welcome_message ? "Configurada" : "Configurar"}
+                           </Button>
+                         </TableCell>
+                         <TableCell>
+                           <Badge variant={group.is_monitored ? "default" : "secondary"} className={group.is_monitored ? "bg-primary/15 text-primary border-primary/20 hover:bg-primary/20" : ""}>
+                             {group.is_monitored ? "Ativo" : "Inativo"}
+                           </Badge>
+                         </TableCell>
+                         <TableCell>
+                           <Switch checked={group.is_monitored} onCheckedChange={() => toggleMonitor(group)} />
+                         </TableCell>
+                       </motion.tr>
+                     ))
+                   )}
+                 </TableBody>
+               </Table>
+             </CardContent>
+           </Card>
+         </motion.div>
+
+        {/* Welcome Message Dialog */}
+        <Dialog open={!!editingGroup} onOpenChange={(open) => !open && setEditingGroup(null)}>
+          <DialogContent className="glass-card border-border/50 sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="text-base flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-primary" />
+                Mensagem de boas-vindas
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-xs text-muted-foreground">
+                Grupo: <span className="font-medium text-foreground">{editingGroup?.name}</span>
+              </p>
+              <div className="space-y-2">
+                <Label className="text-xs">Mensagem (use <code className="bg-muted px-1 rounded text-[10px]">{"{{nome}}"}</code> para o nome do membro)</Label>
+                <Textarea
+                  value={welcomeMsg}
+                  onChange={e => setWelcomeMsg(e.target.value)}
+                  placeholder={"Olá {{nome}}, bem-vindo(a) ao grupo! 👋\n\nPor favor, leia as regras fixadas."}
+                  className="bg-muted/30 border-border/50 min-h-[120px] text-sm"
+                  maxLength={1000}
+                />
+                <p className="text-[10px] text-muted-foreground/50 text-right">{welcomeMsg.length}/1000</p>
+              </div>
+              <div className="flex gap-2 justify-end">
+                {editingGroup?.welcome_message && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => { setWelcomeMsg(""); }}
+                    className="text-xs border-destructive/30 text-destructive hover:bg-destructive/10"
+                  >
+                    Remover
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  onClick={saveWelcomeMessage}
+                  disabled={savingWelcome}
+                  className="text-xs bg-gradient-to-r from-primary to-emerald-500"
+                >
+                  <Save className="mr-1.5 h-3 w-3" />
+                  {savingWelcome ? "Salvando..." : "Salvar"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+       </div>
+     </DashboardLayout>
+   );
 }

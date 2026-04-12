@@ -236,7 +236,8 @@ export default function Whitelist() {
                 </Button>
               </div>
             </DialogContent>
-          </Dialog>
+           </Dialog>
+          </div>
         </div>
 
         <Card>

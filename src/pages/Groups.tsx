@@ -55,18 +55,50 @@ export default function Groups() {
   const syncGroups = async (instance: Instance) => {
     setSyncing(true);
     try {
-      const res = await fetch(`${instance.api_url}/group/fetchAllGroups/${instance.name}`, {
+      // Fetch with participants to check admin status
+      const res = await fetch(`${instance.api_url}/group/fetchAllGroups/${instance.name}?getParticipants=true`, {
         headers: { apikey: instance.api_key },
       });
       if (!res.ok) throw new Error("Falha ao buscar grupos");
       const data = await res.json();
-      
       const groupsData = Array.isArray(data) ? data : data?.data || [];
-      
+
+      // Get the instance owner JID to check admin role
+      const connRes = await fetch(`${instance.api_url}/instance/connectionState/${instance.name}`, {
+        headers: { apikey: instance.api_key },
+      });
+      const connData = await connRes.json();
+      // Try to get owner JID from instance info
+      const infoRes = await fetch(`${instance.api_url}/instance/fetchInstances`, {
+        headers: { apikey: instance.api_key },
+      });
+      const instances = await infoRes.json();
+      const thisInstance = Array.isArray(instances) 
+        ? instances.find((i: any) => i.name === instance.name)
+        : null;
+      const ownerJid = thisInstance?.ownerJid || "";
+
+      let syncedCount = 0;
+
+      // Remove groups where user is no longer admin
+      const adminJids = new Set<string>();
+
       for (const g of groupsData) {
         const jid = g.id || g.jid;
         const name = g.subject || g.name || jid;
         const count = g.size || g.participants?.length || 0;
+        const participants = g.participants || [];
+
+        // Check if the bot/owner is admin or superadmin in this group
+        const isAdmin = participants.some((p: any) => 
+          (p.phoneNumber === ownerJid || p.id === ownerJid) && 
+          (p.admin === "admin" || p.admin === "superadmin")
+        );
+
+        if (!isAdmin) continue;
+
+        adminJids.add(jid);
+        syncedCount++;
 
         const { data: existing } = await supabase
           .from("groups")
@@ -89,7 +121,21 @@ export default function Groups() {
         }
       }
 
-      toast.success(`${groupsData.length} grupos sincronizados!`);
+      // Remove groups where user is no longer admin
+      const { data: existingGroups } = await supabase
+        .from("groups")
+        .select("id, group_jid")
+        .eq("instance_id", instance.id);
+
+      if (existingGroups) {
+        for (const eg of existingGroups) {
+          if (!adminJids.has(eg.group_jid)) {
+            await supabase.from("groups").delete().eq("id", eg.id);
+          }
+        }
+      }
+
+      toast.success(`${syncedCount} grupos onde você é admin sincronizados!`);
       fetchGroups();
     } catch (err: any) {
       toast.error(err.message || "Erro ao sincronizar");

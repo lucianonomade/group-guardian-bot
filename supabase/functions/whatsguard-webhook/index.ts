@@ -153,7 +153,21 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (key?.fromMe) {
+    // Extract text BEFORE fromMe check so we can allow commands from bot owner
+    const msg = messageData.message;
+    const messageText = msg?.conversation ||
+                        msg?.extendedTextMessage?.text ||
+                        msg?.imageMessage?.caption ||
+                        msg?.videoMessage?.caption ||
+                        msg?.buttonsResponseMessage?.selectedDisplayText ||
+                        msg?.listResponseMessage?.title ||
+                        msg?.templateButtonReplyMessage?.selectedDisplayText ||
+                        messageData.body ||
+                        messageData.text ||
+                        "";
+
+    // Skip own messages UNLESS it's a command (bot owner sending commands)
+    if (key?.fromMe && !messageText.trim().startsWith("!")) {
       return new Response(JSON.stringify({ status: "ignored", reason: "own message" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

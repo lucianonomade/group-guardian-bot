@@ -242,6 +242,30 @@ export default function Groups() {
               <p className="text-xs text-muted-foreground">
                 Grupo: <span className="font-medium text-foreground">{editingGroup?.name}</span>
               </p>
+
+              {/* Templates */}
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground/70">Templates prontos</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { label: "👋 Simples", text: "Olá {{nome}}, bem-vindo(a) ao grupo! 👋" },
+                    { label: "📜 Com regras", text: "Olá {{nome}}, seja bem-vindo(a)! 👋\n\n📜 Por favor, leia as regras fixadas antes de interagir.\n\nBoa convivência a todos!" },
+                    { label: "🎉 Festivo", text: "🎉 *{{nome}}* chegou!\n\nSeja muito bem-vindo(a) ao nosso grupo! Fique à vontade para se apresentar e participar das conversas. 💬" },
+                    { label: "🏢 Profissional", text: "Bem-vindo(a), {{nome}}! 👋\n\nEste grupo é destinado a discussões profissionais. Por favor:\n\n✅ Apresente-se brevemente\n✅ Mantenha o foco nos temas do grupo\n✅ Respeite todos os membros\n\nBom trabalho!" },
+                  ].map((tpl) => (
+                    <Button
+                      key={tpl.label}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setWelcomeMsg(tpl.text)}
+                      className="text-[11px] h-auto py-2 px-3 border-border/40 hover:border-primary/40 hover:bg-primary/5 justify-start text-left"
+                    >
+                      {tpl.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label className="text-xs">Mensagem (use <code className="bg-muted px-1 rounded text-[10px]">{"{{nome}}"}</code> para o nome do membro)</Label>
                 <Textarea

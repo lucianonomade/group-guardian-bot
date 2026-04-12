@@ -10,6 +10,8 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Users, Search, RefreshCw } from "lucide-react";
+import { motion } from "framer-motion";
+import { pageHeader, staggerContainer, fadeUpItem, tableRowItem } from "@/lib/animations";
 
 interface Group {
   id: string;
@@ -142,7 +144,7 @@ export default function Groups() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <motion.div {...pageHeader} className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Grupos</h1>
             <p className="mt-1 text-sm text-muted-foreground">Gerencie os grupos monitorados</p>
@@ -155,58 +157,67 @@ export default function Groups() {
               </Button>
             ))}
           </div>
-        </div>
+        </motion.div>
 
-        <div className="relative max-w-sm">
+        <motion.div variants={fadeUpItem} initial="hidden" animate="visible" className="relative max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/50" />
           <Input placeholder="Buscar grupo..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10 bg-muted/30 border-border/50" />
-        </div>
+        </motion.div>
 
-        <Card className="glass-card overflow-hidden">
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-border/30 hover:bg-transparent">
-                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Nome</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">JID</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Membros</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Status</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Monitorar</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-10">Carregando...</TableCell></TableRow>
-                ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-10">
-                    {instances.length === 0 ? "Configure uma instância primeiro" : "Nenhum grupo encontrado"}
-                  </TableCell></TableRow>
-                ) : (
-                  filtered.map(group => (
-                    <TableRow key={group.id} className="border-border/20 hover:bg-muted/10">
-                      <TableCell className="font-medium text-sm">{group.name}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground/60 font-mono">{group.group_jid}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                          <Users className="h-3 w-3" />
-                          {group.participant_count}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={group.is_monitored ? "default" : "secondary"} className={group.is_monitored ? "bg-primary/15 text-primary border-primary/20 hover:bg-primary/20" : ""}>
-                          {group.is_monitored ? "Ativo" : "Inativo"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Switch checked={group.is_monitored} onCheckedChange={() => toggleMonitor(group)} />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <motion.div variants={fadeUpItem} initial="hidden" animate="visible" transition={{ delay: 0.15 }}>
+          <Card className="glass-card overflow-hidden">
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border/30 hover:bg-transparent">
+                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Nome</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">JID</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Membros</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Status</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Monitorar</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-10">Carregando...</TableCell></TableRow>
+                  ) : filtered.length === 0 ? (
+                    <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-10">
+                      {instances.length === 0 ? "Configure uma instância primeiro" : "Nenhum grupo encontrado"}
+                    </TableCell></TableRow>
+                  ) : (
+                    filtered.map((group, i) => (
+                      <motion.tr
+                        key={group.id}
+                        variants={tableRowItem}
+                        initial="hidden"
+                        animate="visible"
+                        transition={{ delay: 0.2 + i * 0.04, duration: 0.3 }}
+                        className="border-b border-border/20 hover:bg-muted/10 transition-colors"
+                      >
+                        <TableCell className="font-medium text-sm">{group.name}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground/60 font-mono">{group.group_jid}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                            <Users className="h-3 w-3" />
+                            {group.participant_count}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={group.is_monitored ? "default" : "secondary"} className={group.is_monitored ? "bg-primary/15 text-primary border-primary/20 hover:bg-primary/20" : ""}>
+                            {group.is_monitored ? "Ativo" : "Inativo"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Switch checked={group.is_monitored} onCheckedChange={() => toggleMonitor(group)} />
+                        </TableCell>
+                      </motion.tr>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     </DashboardLayout>
   );

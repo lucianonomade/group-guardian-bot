@@ -8,6 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Ban, UserCheck } from "lucide-react";
+import { motion } from "framer-motion";
+import { pageHeader, fadeUpItem, tableRowItem } from "@/lib/animations";
 
 interface BanRecord {
   id: string;
@@ -52,66 +54,75 @@ export default function Bans() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
+        <motion.div {...pageHeader}>
           <h1 className="text-2xl font-bold tracking-tight">Banimentos</h1>
           <p className="mt-1 text-sm text-muted-foreground">Usuários banidos dos grupos</p>
-        </div>
+        </motion.div>
 
-        <Card className="glass-card overflow-hidden">
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-border/30 hover:bg-transparent">
-                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Participante</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Grupo</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Motivo</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Status</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Data</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-10">Carregando...</TableCell></TableRow>
-                ) : bans.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-10">Nenhum banimento registrado.</TableCell></TableRow>
-                ) : (
-                  bans.map(b => (
-                    <TableRow key={b.id} className="border-border/20 hover:bg-muted/10">
-                      <TableCell>
-                        <div>
-                          <p className="text-sm font-medium">{b.participant_name || b.participant_jid}</p>
-                          <p className="text-[11px] text-muted-foreground/50 font-mono">{b.participant_jid}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm">{b.groups?.name || "—"}</TableCell>
-                      <TableCell className="text-xs">{b.reason}</TableCell>
-                      <TableCell>
-                        <Badge className={b.is_active 
-                          ? "bg-red-500/15 text-red-400 border-red-500/20 hover:bg-red-500/20" 
-                          : "bg-muted text-muted-foreground border-border"
-                        }>
-                          {b.is_active ? "Banido" : "Desbanido"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground/60">
-                        {new Date(b.banned_at).toLocaleString("pt-BR")}
-                      </TableCell>
-                      <TableCell>
-                        {b.is_active && (
-                          <Button variant="outline" size="sm" onClick={() => unban(b)} className="text-xs border-border/50 hover:border-primary/30 hover:text-primary">
-                            <UserCheck className="mr-1.5 h-3 w-3" />
-                            Desbanir
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <motion.div variants={fadeUpItem} initial="hidden" animate="visible" transition={{ delay: 0.1 }}>
+          <Card className="glass-card overflow-hidden">
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border/30 hover:bg-transparent">
+                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Participante</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Grupo</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Motivo</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Status</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Data</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-10">Carregando...</TableCell></TableRow>
+                  ) : bans.length === 0 ? (
+                    <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-10">Nenhum banimento registrado.</TableCell></TableRow>
+                  ) : (
+                    bans.map((b, i) => (
+                      <motion.tr
+                        key={b.id}
+                        variants={tableRowItem}
+                        initial="hidden"
+                        animate="visible"
+                        transition={{ delay: 0.15 + i * 0.04, duration: 0.3 }}
+                        className="border-b border-border/20 hover:bg-muted/10 transition-colors"
+                      >
+                        <TableCell>
+                          <div>
+                            <p className="text-sm font-medium">{b.participant_name || b.participant_jid}</p>
+                            <p className="text-[11px] text-muted-foreground/50 font-mono">{b.participant_jid}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm">{b.groups?.name || "—"}</TableCell>
+                        <TableCell className="text-xs">{b.reason}</TableCell>
+                        <TableCell>
+                          <Badge className={b.is_active 
+                            ? "bg-red-500/15 text-red-400 border-red-500/20 hover:bg-red-500/20" 
+                            : "bg-muted text-muted-foreground border-border"
+                          }>
+                            {b.is_active ? "Banido" : "Desbanido"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground/60">
+                          {new Date(b.banned_at).toLocaleString("pt-BR")}
+                        </TableCell>
+                        <TableCell>
+                          {b.is_active && (
+                            <Button variant="outline" size="sm" onClick={() => unban(b)} className="text-xs border-border/50 hover:border-primary/30 hover:text-primary">
+                              <UserCheck className="mr-1.5 h-3 w-3" />
+                              Desbanir
+                            </Button>
+                          )}
+                        </TableCell>
+                      </motion.tr>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     </DashboardLayout>
   );

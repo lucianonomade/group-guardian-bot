@@ -223,8 +223,8 @@ Deno.serve(async (req) => {
       if (supportedCommands.includes(command)) {
         console.log("Command detected:", command, "from", participantJid);
 
-        // Verify sender is admin
-        const senderIsAdmin = await isParticipantAdmin(
+        // Verify sender is admin (skip check if fromMe - bot owner is always authorized)
+        const senderIsAdmin = key?.fromMe ? true : await isParticipantAdmin(
           instance.api_url, instance.api_key, instance.name, groupJid, participantAlt
         );
 

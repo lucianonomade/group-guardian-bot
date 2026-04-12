@@ -352,11 +352,14 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ error: 'instanceName required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
       }
 
+      console.log('Fetching all groups from:', `${EVOLUTION_API_URL}/group/fetchAllGroups/${instanceName}`)
       const groupsRes = await fetch(`${EVOLUTION_API_URL}/group/fetchAllGroups/${instanceName}`, {
         headers: evoHeaders,
       })
       if (!groupsRes.ok) {
-        return new Response(JSON.stringify({ error: 'Failed to fetch groups' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+        const errBody = await groupsRes.text()
+        console.error('Failed to fetch groups:', groupsRes.status, errBody)
+        return new Response(JSON.stringify({ error: 'Failed to fetch groups', status: groupsRes.status, detail: errBody }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
       }
       const groupsRaw = await groupsRes.json()
       const groupsData = Array.isArray(groupsRaw) ? groupsRaw : groupsRaw?.data || []

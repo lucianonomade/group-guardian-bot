@@ -53,51 +53,54 @@ export default function Bans() {
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Banimentos</h1>
-          <p className="text-muted-foreground">Usuários banidos dos grupos</p>
+          <h1 className="text-2xl font-bold tracking-tight">Banimentos</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Usuários banidos dos grupos</p>
         </div>
 
-        <Card className="glass-card">
+        <Card className="glass-card overflow-hidden">
           <CardContent className="p-0">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Participante</TableHead>
-                  <TableHead>Grupo</TableHead>
-                  <TableHead>Motivo</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Ações</TableHead>
+                <TableRow className="border-border/30 hover:bg-transparent">
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Participante</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Grupo</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Motivo</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Status</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Data</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">Carregando...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-10">Carregando...</TableCell></TableRow>
                 ) : bans.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">Nenhum banimento registrado.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-10">Nenhum banimento registrado.</TableCell></TableRow>
                 ) : (
                   bans.map(b => (
-                    <TableRow key={b.id}>
+                    <TableRow key={b.id} className="border-border/20 hover:bg-muted/10">
                       <TableCell>
                         <div>
-                          <p className="font-medium">{b.participant_name || b.participant_jid}</p>
-                          <p className="text-xs text-muted-foreground">{b.participant_jid}</p>
+                          <p className="text-sm font-medium">{b.participant_name || b.participant_jid}</p>
+                          <p className="text-[11px] text-muted-foreground/50 font-mono">{b.participant_jid}</p>
                         </div>
                       </TableCell>
-                      <TableCell>{b.groups?.name || "—"}</TableCell>
-                      <TableCell className="text-sm">{b.reason}</TableCell>
+                      <TableCell className="text-sm">{b.groups?.name || "—"}</TableCell>
+                      <TableCell className="text-xs">{b.reason}</TableCell>
                       <TableCell>
-                        <Badge variant={b.is_active ? "destructive" : "secondary"}>
+                        <Badge className={b.is_active 
+                          ? "bg-red-500/15 text-red-400 border-red-500/20 hover:bg-red-500/20" 
+                          : "bg-muted text-muted-foreground border-border"
+                        }>
                           {b.is_active ? "Banido" : "Desbanido"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
+                      <TableCell className="text-xs text-muted-foreground/60">
                         {new Date(b.banned_at).toLocaleString("pt-BR")}
                       </TableCell>
                       <TableCell>
                         {b.is_active && (
-                          <Button variant="outline" size="sm" onClick={() => unban(b)}>
-                            <UserCheck className="mr-1 h-4 w-4" />
+                          <Button variant="outline" size="sm" onClick={() => unban(b)} className="text-xs border-border/50 hover:border-primary/30 hover:text-primary">
+                            <UserCheck className="mr-1.5 h-3 w-3" />
                             Desbanir
                           </Button>
                         )}

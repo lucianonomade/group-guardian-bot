@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -55,7 +55,6 @@ export default function Groups() {
   const syncGroups = async (instance: Instance) => {
     setSyncing(true);
     try {
-      // Fetch with participants to check admin status
       const res = await fetch(`${instance.api_url}/group/fetchAllGroups/${instance.name}?getParticipants=true`, {
         headers: { apikey: instance.api_key },
       });
@@ -63,24 +62,16 @@ export default function Groups() {
       const data = await res.json();
       const groupsData = Array.isArray(data) ? data : data?.data || [];
 
-      // Get the instance owner JID to check admin role
-      const connRes = await fetch(`${instance.api_url}/instance/connectionState/${instance.name}`, {
-        headers: { apikey: instance.api_key },
-      });
-      const connData = await connRes.json();
-      // Try to get owner JID from instance info
       const infoRes = await fetch(`${instance.api_url}/instance/fetchInstances`, {
         headers: { apikey: instance.api_key },
       });
-      const instances = await infoRes.json();
-      const thisInstance = Array.isArray(instances) 
-        ? instances.find((i: any) => i.name === instance.name)
+      const instancesData = await infoRes.json();
+      const thisInstance = Array.isArray(instancesData) 
+        ? instancesData.find((i: any) => i.name === instance.name)
         : null;
       const ownerJid = thisInstance?.ownerJid || "";
 
       let syncedCount = 0;
-
-      // Remove groups where user is no longer admin
       const adminJids = new Set<string>();
 
       for (const g of groupsData) {
@@ -89,7 +80,6 @@ export default function Groups() {
         const count = g.size || g.participants?.length || 0;
         const participants = g.participants || [];
 
-        // Check if the bot/owner is admin or superadmin in this group
         const isAdmin = participants.some((p: any) => 
           (p.phoneNumber === ownerJid || p.id === ownerJid) && 
           (p.admin === "admin" || p.admin === "superadmin")
@@ -121,7 +111,6 @@ export default function Groups() {
         }
       }
 
-      // Remove groups where user is no longer admin
       const { data: existingGroups } = await supabase
         .from("groups")
         .select("id, group_jid")
@@ -155,56 +144,56 @@ export default function Groups() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Grupos</h1>
-            <p className="text-muted-foreground">Gerencie os grupos monitorados</p>
+            <h1 className="text-2xl font-bold tracking-tight">Grupos</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Gerencie os grupos monitorados</p>
           </div>
           <div className="flex gap-2">
             {instances.map(inst => (
-              <Button key={inst.id} onClick={() => syncGroups(inst)} disabled={syncing} size="sm">
-                <RefreshCw className={`mr-2 h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
-                Sincronizar ({inst.name})
+              <Button key={inst.id} onClick={() => syncGroups(inst)} disabled={syncing} size="sm" className="bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-500/90 shadow-lg shadow-primary/20">
+                <RefreshCw className={`mr-2 h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
+                Sincronizar
               </Button>
             ))}
           </div>
         </div>
 
         <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Buscar grupo..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/50" />
+          <Input placeholder="Buscar grupo..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10 bg-muted/30 border-border/50" />
         </div>
 
-        <Card className="glass-card">
+        <Card className="glass-card overflow-hidden">
           <CardContent className="p-0">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>JID</TableHead>
-                  <TableHead>Participantes</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Monitorar</TableHead>
+                <TableRow className="border-border/30 hover:bg-transparent">
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Nome</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">JID</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Membros</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Status</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Monitorar</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">Carregando...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-10">Carregando...</TableCell></TableRow>
                 ) : filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">
-                    {instances.length === 0 ? "Configure uma instância primeiro em Configurações" : "Nenhum grupo encontrado. Clique em Sincronizar."}
+                  <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-10">
+                    {instances.length === 0 ? "Configure uma instância primeiro" : "Nenhum grupo encontrado"}
                   </TableCell></TableRow>
                 ) : (
                   filtered.map(group => (
-                    <TableRow key={group.id}>
-                      <TableCell className="font-medium">{group.name}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{group.group_jid}</TableCell>
+                    <TableRow key={group.id} className="border-border/20 hover:bg-muted/10">
+                      <TableCell className="font-medium text-sm">{group.name}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground/60 font-mono">{group.group_jid}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                           <Users className="h-3 w-3" />
                           {group.participant_count}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={group.is_monitored ? "default" : "secondary"}>
+                        <Badge variant={group.is_monitored ? "default" : "secondary"} className={group.is_monitored ? "bg-primary/15 text-primary border-primary/20 hover:bg-primary/20" : ""}>
                           {group.is_monitored ? "Ativo" : "Inativo"}
                         </Badge>
                       </TableCell>

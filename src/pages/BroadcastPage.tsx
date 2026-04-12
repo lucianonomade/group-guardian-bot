@@ -10,10 +10,17 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Megaphone, Search, ImagePlus, Send, Loader2, Trash2, Clock, CheckCircle, XCircle, Users, RefreshCw } from "lucide-react";
+import { Megaphone, Search, ImagePlus, Send, Loader2, Trash2, Clock, CheckCircle, XCircle, Users, RefreshCw, CalendarIcon, Timer } from "lucide-react";
 import { motion } from "framer-motion";
 import { pageHeader, fadeUpItem, staggerContainer, scaleUpItem } from "@/lib/animations";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface Instance {
   id: string;
@@ -36,6 +43,7 @@ interface Broadcast {
   sent_count: number;
   total_count: number;
   created_at: string;
+  scheduled_at: string | null;
 }
 
 export default function BroadcastPage() {
@@ -51,12 +59,30 @@ export default function BroadcastPage() {
   const [loadingGroups, setLoadingGroups] = useState(false);
   const [history, setHistory] = useState<Broadcast[]>([]);
   const [searchGroups, setSearchGroups] = useState("");
+  const [isScheduled, setIsScheduled] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState<Date | undefined>(undefined);
+  const [scheduledHour, setScheduledHour] = useState("12");
+  const [scheduledMinute, setScheduledMinute] = useState("00");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Check for scheduled broadcasts to process
+  const checkScheduled = async () => {
+    try {
+      await supabase.functions.invoke("broadcast-scheduler", { method: "POST" as any });
+      fetchHistory();
+    } catch {
+      // silent
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
     fetchInstances();
     fetchHistory();
+    // Trigger scheduler check on mount and every 2 minutes
+    checkScheduled();
+    const interval = setInterval(checkScheduled, 120000);
+    return () => clearInterval(interval);
   }, [user]);
 
   const fetchInstances = async () => {
@@ -168,6 +194,19 @@ export default function BroadcastPage() {
         imageUrl = urlData.publicUrl;
       }
 
+      // Build scheduled_at timestamp
+      let scheduledAt: string | null = null;
+      if (isScheduled && scheduledDate) {
+        const dt = new Date(scheduledDate);
+        dt.setHours(parseInt(scheduledHour), parseInt(scheduledMinute), 0, 0);
+        if (dt <= new Date()) {
+          toast.error("A data/hora deve ser no futuro");
+          setSending(false);
+          return;
+        }
+        scheduledAt = dt.toISOString();
+      }
+
       // Create broadcast record
       const { data: broadcast, error: insertError } = await supabase
         .from("broadcasts")
@@ -177,26 +216,34 @@ export default function BroadcastPage() {
           message: message.trim(),
           image_url: imageUrl,
           target_groups: Array.from(selectedGroups),
-          status: "pending",
+          status: scheduledAt ? "scheduled" : "pending",
           total_count: selectedGroups.size,
+          scheduled_at: scheduledAt,
         } as any)
         .select()
         .single();
 
       if (insertError) throw insertError;
 
-      // Trigger send
-      const result = await invokeEvolution("send-broadcast", {
-        method: "POST",
-        body: { broadcastId: broadcast.id },
-      });
-
-      toast.success(`Divulgação enviada para ${result.sent}/${result.total} grupos!`);
+      if (scheduledAt) {
+        toast.success(`Divulgação agendada para ${format(new Date(scheduledAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}!`);
+      } else {
+        // Trigger send immediately
+        const result = await invokeEvolution("send-broadcast", {
+          method: "POST",
+          body: { broadcastId: broadcast.id },
+        });
+        toast.success(`Divulgação enviada para ${result.sent}/${result.total} grupos!`);
+      }
 
       // Reset form
       setMessage("");
       removeImage();
       setSelectedGroups(new Set());
+      setIsScheduled(false);
+      setScheduledDate(undefined);
+      setScheduledHour("12");
+      setScheduledMinute("00");
       fetchHistory();
     } catch (err: any) {
       toast.error(err.message || "Erro ao enviar divulgação");
@@ -210,6 +257,7 @@ export default function BroadcastPage() {
 
   const statusConfig: Record<string, { label: string; icon: any; className: string }> = {
     pending: { label: "Pendente", icon: Clock, className: "bg-amber-500/15 text-amber-400 border-amber-500/20" },
+    scheduled: { label: "Agendado", icon: Timer, className: "bg-violet-500/15 text-violet-400 border-violet-500/20" },
     sending: { label: "Enviando", icon: Loader2, className: "bg-blue-500/15 text-blue-400 border-blue-500/20" },
     sent: { label: "Enviado", icon: CheckCircle, className: "bg-primary/15 text-primary border-primary/20" },
     partial: { label: "Parcial", icon: CheckCircle, className: "bg-amber-500/15 text-amber-400 border-amber-500/20" },
@@ -411,24 +459,88 @@ export default function BroadcastPage() {
                   </div>
                 )}
 
+                {/* Schedule toggle */}
+                <div className="space-y-3 rounded-lg border border-border/30 bg-muted/10 p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Timer className="h-4 w-4 text-primary" />
+                      <Label className="text-xs font-medium">Agendar envio</Label>
+                    </div>
+                    <Switch checked={isScheduled} onCheckedChange={setIsScheduled} />
+                  </div>
+
+                  {isScheduled && (
+                    <div className="flex flex-wrap gap-3 pt-1">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn("text-xs h-9 px-3 justify-start", !scheduledDate && "text-muted-foreground")}
+                          >
+                            <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                            {scheduledDate ? format(scheduledDate, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={scheduledDate}
+                            onSelect={setScheduledDate}
+                            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                            initialFocus
+                            className={cn("p-3 pointer-events-auto")}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <div className="flex items-center gap-1">
+                        <Select value={scheduledHour} onValueChange={setScheduledHour}>
+                          <SelectTrigger className="w-16 h-9 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0")).map(h => (
+                              <SelectItem key={h} value={h} className="text-xs">{h}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <span className="text-xs text-muted-foreground font-bold">:</span>
+                        <Select value={scheduledMinute} onValueChange={setScheduledMinute}>
+                          <SelectTrigger className="w-16 h-9 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {["00", "15", "30", "45"].map(m => (
+                              <SelectItem key={m} value={m} className="text-xs">{m}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {/* Send button */}
                 <div className="flex items-center justify-between pt-2">
                   <p className="text-xs text-muted-foreground">
                     {selectedGroups.size > 0
-                      ? `Será enviado para ${selectedGroups.size} grupo(s)`
+                      ? isScheduled
+                        ? `Será agendado para ${selectedGroups.size} grupo(s)`
+                        : `Será enviado para ${selectedGroups.size} grupo(s)`
                       : "Selecione ao menos um grupo"}
                   </p>
                   <Button
                     onClick={sendBroadcast}
-                    disabled={sending || selectedGroups.size === 0 || !message.trim()}
+                    disabled={sending || selectedGroups.size === 0 || !message.trim() || (isScheduled && !scheduledDate)}
                     className="bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-500/90 shadow-lg shadow-primary/20"
                   >
                     {sending ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : isScheduled ? (
+                      <Timer className="mr-2 h-4 w-4" />
                     ) : (
                       <Send className="mr-2 h-4 w-4" />
                     )}
-                    {sending ? "Enviando..." : "Enviar Divulgação"}
+                    {sending ? "Processando..." : isScheduled ? "Agendar" : "Enviar Agora"}
                   </Button>
                 </div>
               </CardContent>
@@ -460,6 +572,12 @@ export default function BroadcastPage() {
                               <span className="text-[10px] text-muted-foreground/50">
                                 {new Date(b.created_at).toLocaleString("pt-BR")}
                               </span>
+                              {b.scheduled_at && (
+                                <span className="text-[10px] text-violet-400/70 flex items-center gap-0.5">
+                                  <Timer className="h-2.5 w-2.5" />
+                                  {new Date(b.scheduled_at).toLocaleString("pt-BR")}
+                                </span>
+                              )}
                               <span className="text-[10px] text-muted-foreground/50">
                                 {b.sent_count}/{b.total_count} grupos
                               </span>

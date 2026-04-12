@@ -156,7 +156,7 @@ Deno.serve(async (req) => {
           id: messageId,
           remoteJid: groupJid,
           fromMe: false,
-          participant: participantJid,
+          participant: participantAlt,
         }),
       });
       console.log("Delete message response:", deleteRes.status);
@@ -199,7 +199,7 @@ Deno.serve(async (req) => {
           body: JSON.stringify({
             groupJid: groupJid,
             action: "remove",
-            participants: [participantJid],
+            participants: [participantAlt],
           }),
         });
         console.log("Ban response:", banRes.status);

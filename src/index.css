@@ -93,16 +93,26 @@
 
 @layer utilities {
   .glass-card {
-    @apply bg-card/60 backdrop-blur-xl border border-border/50 shadow-lg;
-    box-shadow: 0 0 0 1px hsl(225 15% 15% / 0.5), 0 8px 32px -8px hsl(0 0% 0% / 0.4);
+    @apply bg-card/70 backdrop-blur-xl border border-border/40 shadow-xl;
+    box-shadow: 
+      0 0 0 1px hsl(225 15% 15% / 0.6),
+      0 4px 6px -1px hsl(0 0% 0% / 0.3),
+      0 12px 40px -8px hsl(0 0% 0% / 0.4),
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.04);
   }
 
   .glass-card-hover {
     @apply glass-card transition-all duration-300;
   }
   .glass-card-hover:hover {
-    border-color: hsl(var(--primary) / 0.3);
-    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.15), 0 8px 32px -8px hsl(0 0% 0% / 0.5), 0 0 20px -5px hsl(var(--primary) / 0.1);
+    border-color: hsl(var(--primary) / 0.35);
+    box-shadow: 
+      0 0 0 1px hsl(var(--primary) / 0.2),
+      0 4px 6px -1px hsl(0 0% 0% / 0.3),
+      0 16px 48px -8px hsl(0 0% 0% / 0.5),
+      0 0 24px -4px hsl(var(--primary) / 0.12),
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.06);
+    transform: translateY(-1px);
   }
 
   .glow-text {
@@ -114,7 +124,20 @@
     background-image: linear-gradient(135deg, hsl(var(--primary)), hsl(200 70% 55%));
   }
 
+  .stat-card {
+    @apply glass-card rounded-xl p-5 relative overflow-hidden;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.3), transparent);
+  }
+
   .stat-glow {
-    box-shadow: inset 0 1px 0 0 hsl(0 0% 100% / 0.03), 0 0 0 1px hsl(225 15% 15% / 0.5);
+    box-shadow: inset 0 1px 0 0 hsl(0 0% 100% / 0.04), 0 0 0 1px hsl(225 15% 15% / 0.5);
   }
 }

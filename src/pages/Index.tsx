@@ -80,14 +80,17 @@ export default function Index() {
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {statCards.map(card => (
-            <div key={card.label} className={`glass-card rounded-xl p-4 ${card.borderColor}`}>
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-muted-foreground">{card.label}</p>
-                <div className={`flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br ${card.gradient}`}>
-                  <card.icon className={`h-4 w-4 ${card.iconColor}`} />
+            <div key={card.label} className="stat-card group cursor-default">
+              <div className={`absolute inset-0 bg-gradient-to-br ${card.gradient} opacity-40 transition-opacity group-hover:opacity-60`} />
+              <div className="relative">
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{card.label}</p>
+                  <div className={`flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br ${card.gradient}`}>
+                    <card.icon className={`h-4 w-4 ${card.iconColor}`} />
+                  </div>
                 </div>
+                <p className="mt-3 text-3xl font-bold tracking-tight">{loading ? "—" : card.value}</p>
               </div>
-              <p className="mt-3 text-3xl font-bold tracking-tight">{loading ? "—" : card.value}</p>
             </div>
           ))}
         </div>
@@ -108,24 +111,24 @@ export default function Index() {
                 <p className="text-sm">Nenhuma atividade registrada ainda.</p>
               </div>
             ) : (
-              <div className="divide-y divide-border/30">
+              <div className="divide-y divide-border/20">
                 {recentLogs.map(log => {
                   const { label, color } = actionTypeLabel(log.action_type);
                   return (
-                    <div key={log.id} className="flex items-center justify-between px-5 py-3 transition-colors hover:bg-muted/20">
+                    <div key={log.id} className="flex items-center justify-between px-5 py-3.5 transition-colors hover:bg-muted/30">
                       <div className="flex items-center gap-3">
-                        <div className={`h-1.5 w-1.5 rounded-full ${color.replace("text-", "bg-")}`} />
+                        <div className={`h-2 w-2 rounded-full ${color.replace("text-", "bg-")} shadow-sm ${color.replace("text-", "shadow-")}/30`} />
                         <div>
-                          <span className={`text-xs font-semibold ${color}`}>{label}</span>
+                          <span className={`text-xs font-bold ${color}`}>{label}</span>
                           {log.participant_name && (
-                            <span className="ml-2 text-xs text-foreground/70">— {log.participant_name}</span>
+                            <span className="ml-2 text-xs text-foreground/80">— {log.participant_name}</span>
                           )}
                           {log.details && (
-                            <p className="mt-0.5 text-[11px] text-muted-foreground">{log.details}</p>
+                            <p className="mt-0.5 text-[11px] text-muted-foreground/70">{log.details}</p>
                           )}
                         </div>
                       </div>
-                      <span className="text-[11px] text-muted-foreground/60 whitespace-nowrap">
+                      <span className="text-[11px] text-muted-foreground/50 whitespace-nowrap font-mono">
                         {new Date(log.created_at).toLocaleString("pt-BR")}
                       </span>
                     </div>

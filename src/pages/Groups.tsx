@@ -11,8 +11,9 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { WelcomeMessageDialog } from "@/components/WelcomeMessageDialog";
 import { AntifloodDialog } from "@/components/AntifloodDialog";
+import { GroupRulesDialog } from "@/components/GroupRulesDialog";
 import { toast } from "sonner";
-import { Users, Search, RefreshCw, MessageSquare, ShieldAlert, Eye } from "lucide-react";
+import { Users, Search, RefreshCw, MessageSquare, ShieldAlert, Eye, BookOpen } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { pageHeader, fadeUpItem, tableRowItem } from "@/lib/animations";
 
@@ -24,6 +25,7 @@ interface Group {
   participant_count: number;
   instance_id: string;
   welcome_message: string | null;
+  rules_text: string | null;
 }
 
 interface Instance {
@@ -45,6 +47,9 @@ export default function Groups() {
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
   const [antifloodGroupId, setAntifloodGroupId] = useState<string | null>(null);
   const [antifloodGroupName, setAntifloodGroupName] = useState("");
+  const [rulesGroupId, setRulesGroupId] = useState<string | null>(null);
+  const [rulesGroupName, setRulesGroupName] = useState("");
+  const [rulesGroupText, setRulesGroupText] = useState<string | null>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchGroups = async () => {

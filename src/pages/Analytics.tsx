@@ -44,7 +44,7 @@ const containerVariants = {
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
-  visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 300, damping: 24 } },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring" as const, stiffness: 300, damping: 24 } },
 };
 
 export default function Analytics() {

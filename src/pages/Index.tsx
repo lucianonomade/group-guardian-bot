@@ -3,9 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, AlertTriangle, Ban, Shield, Activity, TrendingUp, MessageSquare } from "lucide-react";
+import { Users, AlertTriangle, Ban, Shield, Activity, TrendingUp, MessageSquare, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { motion } from "framer-motion";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Area, AreaChart } from "recharts";
 
 interface Stats {
   groups: number;
@@ -34,14 +34,14 @@ interface DailyData {
 
 const containerVariants = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.08 } },
+  visible: { transition: { staggerChildren: 0.06 } },
 };
 
 const cardVariants = {
-  hidden: { opacity: 0, y: 24, scale: 0.96 },
+  hidden: { opacity: 0, y: 20, scale: 0.97 },
   visible: {
     opacity: 1, y: 0, scale: 1,
-    transition: { type: "spring" as const, stiffness: 260, damping: 20 },
+    transition: { type: "spring" as const, stiffness: 300, damping: 24 },
   },
 };
 
@@ -51,22 +51,22 @@ const fadeUp = {
 };
 
 const logItemVariants = {
-  hidden: { opacity: 0, x: -12 },
+  hidden: { opacity: 0, x: -8 },
   visible: { opacity: 1, x: 0 },
 };
 
-const PIE_COLORS = ["hsl(var(--primary))", "#f59e0b", "#ef4444", "#3b82f6", "#a855f7"];
+const PIE_COLORS = ["hsl(174, 72%, 46%)", "#f59e0b", "#ef4444", "#3b82f6", "#a855f7"];
 
-const ACTION_TYPE_MAP: Record<string, { label: string; color: string }> = {
-  warning: { label: "Aviso", color: "text-amber-400" },
-  ban: { label: "Banimento", color: "text-red-400" },
-  unban: { label: "Desbanimento", color: "text-emerald-400" },
-  link_deleted: { label: "Link Removido", color: "text-blue-400" },
-  word_deleted: { label: "Palavra Proibida", color: "text-purple-400" },
+const ACTION_TYPE_MAP: Record<string, { label: string; color: string; bg: string }> = {
+  warning: { label: "Aviso", color: "text-amber-400", bg: "bg-amber-400" },
+  ban: { label: "Banimento", color: "text-red-400", bg: "bg-red-400" },
+  unban: { label: "Desbanimento", color: "text-emerald-400", bg: "bg-emerald-400" },
+  link_deleted: { label: "Link Removido", color: "text-blue-400", bg: "bg-blue-400" },
+  word_deleted: { label: "Palavra Proibida", color: "text-purple-400", bg: "bg-purple-400" },
 };
 
 const getActionLabel = (type: string) =>
-  ACTION_TYPE_MAP[type] || { label: type, color: "text-muted-foreground" };
+  ACTION_TYPE_MAP[type] || { label: type, color: "text-muted-foreground", bg: "bg-muted-foreground" };
 
 export default function Index() {
   const { user } = useAuth();
@@ -80,7 +80,6 @@ export default function Index() {
     if (!user) return;
 
     const fetchData = async () => {
-      // Get date 7 days ago for chart query
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -106,7 +105,6 @@ export default function Index() {
 
       setRecentLogs((logs.data as ActionLog[]) ?? []);
 
-      // Build daily chart data (last 7 days)
       const allWeekLogs = (weekLogs.data as { action_type: string; created_at: string }[]) ?? [];
       const now = new Date();
       const days: DailyData[] = [];
@@ -125,7 +123,6 @@ export default function Index() {
       }
       setDailyData(days);
 
-      // Action type breakdown from week logs
       const typeCounts: Record<string, number> = {};
       allWeekLogs.forEach(l => {
         const label = getActionLabel(l.action_type).label;
@@ -140,67 +137,93 @@ export default function Index() {
   }, [user]);
 
   const statCards = [
-    { label: "Grupos Monitorados", value: `${stats.monitoredGroups}/${stats.groups}`, icon: Users, gradient: "from-primary/15 to-emerald-500/5", iconColor: "text-primary" },
-    { label: "Avisos Dados", value: stats.warnings, icon: AlertTriangle, gradient: "from-amber-500/15 to-orange-500/5", iconColor: "text-amber-400" },
-    { label: "Banimentos Ativos", value: stats.bans, icon: Ban, gradient: "from-red-500/15 to-rose-500/5", iconColor: "text-red-400" },
-    { label: "Palavras Bloqueadas", value: stats.blockedWords, icon: Shield, gradient: "from-blue-500/15 to-cyan-500/5", iconColor: "text-blue-400" },
-    { label: "Na Whitelist", value: stats.whitelistCount, icon: MessageSquare, gradient: "from-purple-500/15 to-violet-500/5", iconColor: "text-purple-400" },
+    { label: "Grupos", sublabel: "Monitorados", value: stats.monitoredGroups, total: stats.groups, icon: Users, gradient: "from-primary/20 to-teal-500/5", iconBg: "bg-primary/10", iconColor: "text-primary" },
+    { label: "Avisos", sublabel: "Total", value: stats.warnings, icon: AlertTriangle, gradient: "from-amber-500/20 to-orange-500/5", iconBg: "bg-amber-500/10", iconColor: "text-amber-400" },
+    { label: "Banimentos", sublabel: "Ativos", value: stats.bans, icon: Ban, gradient: "from-red-500/20 to-rose-500/5", iconBg: "bg-red-500/10", iconColor: "text-red-400" },
+    { label: "Palavras", sublabel: "Bloqueadas", value: stats.blockedWords, icon: Shield, gradient: "from-blue-500/20 to-cyan-500/5", iconBg: "bg-blue-500/10", iconColor: "text-blue-400" },
+    { label: "Whitelist", sublabel: "Participantes", value: stats.whitelistCount, icon: MessageSquare, gradient: "from-purple-500/20 to-violet-500/5", iconBg: "bg-purple-500/10", iconColor: "text-purple-400" },
   ];
 
   return (
     <DashboardLayout>
       <div className="space-y-8">
-        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Visão geral da moderação dos seus grupos</p>
+        {/* Header */}
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}>
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-1 rounded-full bg-gradient-to-b from-primary to-primary/20" />
+            <div>
+              <h1 className="text-3xl font-extrabold tracking-tight">Dashboard</h1>
+              <p className="mt-0.5 text-sm text-muted-foreground/60">Visão geral da moderação dos seus grupos</p>
+            </div>
+          </div>
         </motion.div>
 
         {/* Stats Cards */}
         <motion.div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5" variants={containerVariants} initial="hidden" animate="visible">
           {statCards.map(card => (
-            <motion.div key={card.label} variants={cardVariants} whileHover={{ scale: 1.03, transition: { duration: 0.2 } }} className="stat-card group cursor-default">
-              <div className={`absolute inset-0 bg-gradient-to-br ${card.gradient} opacity-40 transition-opacity group-hover:opacity-60`} />
+            <motion.div key={card.label} variants={cardVariants} whileHover={{ y: -4, transition: { duration: 0.3 } }} className="stat-card group cursor-default">
+              <div className={`absolute inset-0 bg-gradient-to-br ${card.gradient} opacity-50 transition-opacity duration-500 group-hover:opacity-80`} />
               <div className="relative">
-                <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{card.label}</p>
-                  <div className={`flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br ${card.gradient}`}>
-                    <card.icon className={`h-4 w-4 ${card.iconColor}`} />
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${card.iconBg} backdrop-blur-sm`}>
+                    <card.icon className={`h-[18px] w-[18px] ${card.iconColor}`} />
                   </div>
                 </div>
-                <p className="mt-3 text-3xl font-bold tracking-tight">{loading ? "—" : card.value}</p>
+                <p className="text-3xl font-extrabold tracking-tight">
+                  {loading ? (
+                    <span className="inline-block h-8 w-16 rounded-lg bg-muted/30 animate-pulse" />
+                  ) : card.total ? (
+                    <><span>{card.value}</span><span className="text-base font-semibold text-muted-foreground/40">/{card.total}</span></>
+                  ) : card.value}
+                </p>
+                <p className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50">{card.label}</p>
               </div>
             </motion.div>
           ))}
         </motion.div>
 
         {/* Charts Row */}
-        <motion.div className="grid gap-4 lg:grid-cols-3" variants={containerVariants} initial="hidden" animate="visible">
+        <motion.div className="grid gap-5 lg:grid-cols-3" variants={containerVariants} initial="hidden" animate="visible">
           {/* Bar Chart */}
           <motion.div variants={cardVariants} className="lg:col-span-2">
             <Card className="glass-card overflow-hidden">
-              <CardHeader className="border-b border-border/30 pb-4">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <TrendingUp className="h-4 w-4 text-primary" />
+              <CardHeader className="border-b border-border/20 pb-4">
+                <CardTitle className="flex items-center gap-2.5 text-sm font-bold">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+                    <TrendingUp className="h-3.5 w-3.5 text-primary" />
+                  </div>
                   Atividade dos Últimos 7 Dias
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-6">
                 {loading ? (
-                  <div className="h-48 flex items-center justify-center text-sm text-muted-foreground">Carregando...</div>
+                  <div className="h-52 flex items-center justify-center">
+                    <div className="h-5 w-5 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+                  </div>
                 ) : dailyData.every(d => d.avisos === 0 && d.bans === 0) ? (
-                  <div className="h-48 flex flex-col items-center justify-center text-muted-foreground gap-2">
-                    <TrendingUp className="h-8 w-8 opacity-20" />
-                    <p className="text-sm">Sem atividade recente</p>
+                  <div className="h-52 flex flex-col items-center justify-center text-muted-foreground/40 gap-3">
+                    <TrendingUp className="h-10 w-10 opacity-20" />
+                    <p className="text-sm font-medium">Sem atividade recente</p>
                   </div>
                 ) : (
-                  <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={dailyData} barGap={4}>
-                      <XAxis dataKey="day" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} allowDecimals={false} />
-                      <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }} />
-                      <Bar dataKey="avisos" name="Avisos" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="bans" name="Bans" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                    </BarChart>
+                  <ResponsiveContainer width="100%" height={210}>
+                    <AreaChart data={dailyData}>
+                      <defs>
+                        <linearGradient id="avisosGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.3} />
+                          <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="bansGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#ef4444" stopOpacity={0.3} />
+                          <stop offset="100%" stopColor="#ef4444" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="day" tick={{ fontSize: 11, fill: "hsl(210 10% 45%)" }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 11, fill: "hsl(210 10% 45%)" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                      <Tooltip contentStyle={{ background: "hsl(220 18% 7%)", border: "1px solid hsl(220 14% 12%)", borderRadius: "12px", fontSize: "12px", boxShadow: "0 8px 32px -8px rgba(0,0,0,0.5)" }} />
+                      <Area type="monotone" dataKey="avisos" name="Avisos" stroke="#f59e0b" fill="url(#avisosGrad)" strokeWidth={2} dot={false} />
+                      <Area type="monotone" dataKey="bans" name="Bans" stroke="#ef4444" fill="url(#bansGrad)" strokeWidth={2} dot={false} />
+                    </AreaChart>
                   </ResponsiveContainer>
                 )}
               </CardContent>
@@ -210,37 +233,41 @@ export default function Index() {
           {/* Pie Chart */}
           <motion.div variants={cardVariants}>
             <Card className="glass-card overflow-hidden h-full">
-              <CardHeader className="border-b border-border/30 pb-4">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Activity className="h-4 w-4 text-primary" />
+              <CardHeader className="border-b border-border/20 pb-4">
+                <CardTitle className="flex items-center gap-2.5 text-sm font-bold">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+                    <Activity className="h-3.5 w-3.5 text-primary" />
+                  </div>
                   Tipos de Ação
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-6">
                 {loading ? (
-                  <div className="h-48 flex items-center justify-center text-sm text-muted-foreground">Carregando...</div>
+                  <div className="h-52 flex items-center justify-center">
+                    <div className="h-5 w-5 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+                  </div>
                 ) : actionBreakdown.length === 0 ? (
-                  <div className="h-48 flex flex-col items-center justify-center text-muted-foreground gap-2">
-                    <Activity className="h-8 w-8 opacity-20" />
-                    <p className="text-sm">Sem dados</p>
+                  <div className="h-52 flex flex-col items-center justify-center text-muted-foreground/40 gap-3">
+                    <Activity className="h-10 w-10 opacity-20" />
+                    <p className="text-sm font-medium">Sem dados</p>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center gap-3">
-                    <ResponsiveContainer width="100%" height={160}>
+                  <div className="flex flex-col items-center gap-4">
+                    <ResponsiveContainer width="100%" height={170}>
                       <PieChart>
-                        <Pie data={actionBreakdown} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={65} paddingAngle={3}>
+                        <Pie data={actionBreakdown} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={4} strokeWidth={0}>
                           {actionBreakdown.map((_, i) => (
                             <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                           ))}
                         </Pie>
-                        <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }} />
+                        <Tooltip contentStyle={{ background: "hsl(220 18% 7%)", border: "1px solid hsl(220 14% 12%)", borderRadius: "12px", fontSize: "12px" }} />
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="flex flex-wrap gap-3 justify-center">
                       {actionBreakdown.map((item, i) => (
                         <div key={item.name} className="flex items-center gap-1.5">
                           <div className="h-2 w-2 rounded-full" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                          <span className="text-[10px] text-muted-foreground">{item.name} ({item.value})</span>
+                          <span className="text-[10px] text-muted-foreground/60 font-medium">{item.name} ({item.value})</span>
                         </div>
                       ))}
                     </div>
@@ -254,46 +281,52 @@ export default function Index() {
         {/* Recent Activity */}
         <motion.div variants={fadeUp} initial="hidden" animate="visible">
           <Card className="glass-card overflow-hidden">
-            <CardHeader className="border-b border-border/30 pb-4">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Activity className="h-4 w-4 text-primary" />
+            <CardHeader className="border-b border-border/20 pb-4">
+              <CardTitle className="flex items-center gap-2.5 text-sm font-bold">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+                  <Activity className="h-3.5 w-3.5 text-primary" />
+                </div>
                 Atividade Recente
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {loading ? (
-                <p className="p-6 text-sm text-muted-foreground">Carregando...</p>
+                <div className="flex items-center justify-center py-12">
+                  <div className="h-5 w-5 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+                </div>
               ) : recentLogs.length === 0 ? (
-                <div className="flex flex-col items-center gap-2 p-10 text-muted-foreground">
-                  <TrendingUp className="h-8 w-8 opacity-30" />
-                  <p className="text-sm">Nenhuma atividade registrada ainda.</p>
+                <div className="flex flex-col items-center gap-3 p-12 text-muted-foreground/40">
+                  <TrendingUp className="h-10 w-10 opacity-20" />
+                  <p className="text-sm font-medium">Nenhuma atividade registrada ainda.</p>
                 </div>
               ) : (
-                <div className="divide-y divide-border/20">
+                <div className="divide-y divide-border/10">
                   {recentLogs.map((log, i) => {
-                    const { label, color } = getActionLabel(log.action_type);
+                    const { label, color, bg } = getActionLabel(log.action_type);
                     return (
                       <motion.div
                         key={log.id}
                         variants={logItemVariants}
                         initial="hidden"
                         animate="visible"
-                        transition={{ delay: 0.4 + i * 0.05, duration: 0.3 }}
-                        className="flex items-center justify-between px-5 py-3.5 transition-colors hover:bg-muted/30"
+                        transition={{ delay: 0.3 + i * 0.04, duration: 0.3 }}
+                        className="flex items-center justify-between px-6 py-4 transition-colors duration-300 hover:bg-muted/20"
                       >
-                        <div className="flex items-center gap-3">
-                          <div className={`h-2 w-2 rounded-full ${color.replace("text-", "bg-")} shadow-sm ${color.replace("text-", "shadow-")}/30`} />
+                        <div className="flex items-center gap-3.5">
+                          <div className={`h-2 w-2 rounded-full ${bg} shadow-sm`} style={{ boxShadow: `0 0 8px 1px currentColor` }} />
                           <div>
-                            <span className={`text-xs font-bold ${color}`}>{label}</span>
-                            {log.participant_name && (
-                              <span className="ml-2 text-xs text-foreground/80">— {log.participant_name}</span>
-                            )}
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xs font-bold ${color}`}>{label}</span>
+                              {log.participant_name && (
+                                <span className="text-xs text-foreground/70 font-medium">— {log.participant_name}</span>
+                              )}
+                            </div>
                             {log.details && (
-                              <p className="mt-0.5 text-[11px] text-muted-foreground/70">{log.details}</p>
+                              <p className="mt-0.5 text-[11px] text-muted-foreground/50">{log.details}</p>
                             )}
                           </div>
                         </div>
-                        <span className="text-[11px] text-muted-foreground/50 whitespace-nowrap font-mono">
+                        <span className="text-[10px] text-muted-foreground/35 whitespace-nowrap font-mono tracking-tight">
                           {new Date(log.created_at).toLocaleString("pt-BR")}
                         </span>
                       </motion.div>

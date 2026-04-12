@@ -33,6 +33,8 @@ Deno.serve(async (req) => {
     const messageData = body.data;
     console.log("Message data keys:", messageData ? Object.keys(messageData) : "null");
     
+    console.log("Data structure:", JSON.stringify(messageData).substring(0, 1000));
+    
     if (!messageData) {
       return new Response(JSON.stringify({ status: "ignored", reason: "no message data" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

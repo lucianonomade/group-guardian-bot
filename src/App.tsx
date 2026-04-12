@@ -13,6 +13,7 @@ import Bans from "./pages/Bans";
 import BlockedWords from "./pages/BlockedWords";
 import SettingsPage from "./pages/SettingsPage";
 import Whitelist from "./pages/Whitelist";
+import BroadcastPage from "./pages/BroadcastPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
+            <Route path="/broadcast" element={<ProtectedRoute><BroadcastPage /></ProtectedRoute>} />
             <Route path="/warnings" element={<ProtectedRoute><Warnings /></ProtectedRoute>} />
             <Route path="/bans" element={<ProtectedRoute><Bans /></ProtectedRoute>} />
             <Route path="/blocked-words" element={<ProtectedRoute><BlockedWords /></ProtectedRoute>} />

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import {
   Shield, LayoutDashboard, Users, AlertTriangle, Ban,
   MessageSquareOff, ShieldCheck, Settings, LogOut, Menu, X,
-  Zap
+  Zap, Megaphone
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/groups", label: "Grupos", icon: Users },
+  { href: "/broadcast", label: "Divulgação", icon: Megaphone },
   { href: "/warnings", label: "Avisos", icon: AlertTriangle },
   { href: "/bans", label: "Banimentos", icon: Ban },
   { href: "/blocked-words", label: "Palavras Bloqueadas", icon: MessageSquareOff },

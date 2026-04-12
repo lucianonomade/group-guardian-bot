@@ -65,10 +65,24 @@ export default function BroadcastPage() {
   const [scheduledMinute, setScheduledMinute] = useState("00");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Check for scheduled broadcasts to process
+  const checkScheduled = async () => {
+    try {
+      await supabase.functions.invoke("broadcast-scheduler", { method: "POST" as any });
+      fetchHistory();
+    } catch {
+      // silent
+    }
+  };
+
   useEffect(() => {
     if (!user) return;
     fetchInstances();
     fetchHistory();
+    // Trigger scheduler check on mount and every 2 minutes
+    checkScheduled();
+    const interval = setInterval(checkScheduled, 120000);
+    return () => clearInterval(interval);
   }, [user]);
 
   const fetchInstances = async () => {

@@ -138,14 +138,6 @@ export default function Groups() {
             <h1 className="text-2xl font-bold tracking-tight">Grupos</h1>
             <p className="mt-1 text-sm text-muted-foreground">Gerencie os grupos monitorados</p>
           </div>
-          <div className="flex gap-2">
-            {instances.map(inst => (
-              <Button key={inst.id} onClick={() => syncGroups(inst)} disabled={syncing} size="sm" className="bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-500/90 shadow-lg shadow-primary/20">
-                <RefreshCw className={`mr-2 h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
-                Sincronizar
-              </Button>
-            ))}
-          </div>
         </motion.div>
 
         <motion.div variants={fadeUpItem} initial="hidden" animate="visible" className="relative max-w-sm">

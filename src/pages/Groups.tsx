@@ -8,13 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { WelcomeMessageDialog } from "@/components/WelcomeMessageDialog";
 import { toast } from "sonner";
-import { Users, Search, RefreshCw, MessageSquare, Save } from "lucide-react";
+import { Users, Search, RefreshCw, MessageSquare } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { pageHeader, staggerContainer, fadeUpItem, tableRowItem } from "@/lib/animations";
+import { pageHeader, fadeUpItem, tableRowItem } from "@/lib/animations";
 
 interface Group {
   id: string;
@@ -42,8 +40,6 @@ export default function Groups() {
   const [syncing, setSyncing] = useState(false);
   const [syncBanner, setSyncBanner] = useState(false);
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
-  const [welcomeMsg, setWelcomeMsg] = useState("");
-  const [savingWelcome, setSavingWelcome] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchGroups = async () => {

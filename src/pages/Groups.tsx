@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/DashboardLayout";
@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Users, Search, RefreshCw } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { pageHeader, staggerContainer, fadeUpItem, tableRowItem } from "@/lib/animations";
 
 interface Group {
@@ -36,6 +36,8 @@ export default function Groups() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [syncBanner, setSyncBanner] = useState(false);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchGroups = async () => {
     const { data } = await supabase.from("groups").select("*").order("name");
@@ -52,6 +54,33 @@ export default function Groups() {
     if (!user) return;
     fetchGroups();
     fetchInstances();
+
+    // Listen for realtime changes (auto-sync from background)
+    const channel = supabase
+      .channel('groups-sync')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'groups' },
+        () => {
+          // Debounce to avoid multiple toasts during bulk sync
+          if (debounceRef.current) clearTimeout(debounceRef.current);
+          setSyncBanner(true);
+          debounceRef.current = setTimeout(() => {
+            fetchGroups();
+            toast.success("Grupos atualizados automaticamente!", {
+              description: "Uma sincronização em segundo plano foi concluída.",
+              icon: <RefreshCw className="h-4 w-4 text-primary" />,
+            });
+            setTimeout(() => setSyncBanner(false), 3000);
+          }, 2000);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, [user]);
 
   const syncGroups = async (instance: Instance) => {
@@ -79,6 +108,19 @@ export default function Groups() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        <AnimatePresence>
+          {syncBanner && (
+            <motion.div
+              initial={{ opacity: 0, y: -10, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: "auto" }}
+              exit={{ opacity: 0, y: -10, height: 0 }}
+              className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3"
+            >
+              <RefreshCw className="h-4 w-4 animate-spin text-primary" />
+              <span className="text-sm text-primary font-medium">Sincronização automática em andamento...</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
         <motion.div {...pageHeader} className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Grupos</h1>

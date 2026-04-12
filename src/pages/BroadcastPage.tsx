@@ -558,6 +558,12 @@ export default function BroadcastPage() {
                               <span className="text-[10px] text-muted-foreground/50">
                                 {new Date(b.created_at).toLocaleString("pt-BR")}
                               </span>
+                              {b.scheduled_at && (
+                                <span className="text-[10px] text-violet-400/70 flex items-center gap-0.5">
+                                  <Timer className="h-2.5 w-2.5" />
+                                  {new Date(b.scheduled_at).toLocaleString("pt-BR")}
+                                </span>
+                              )}
                               <span className="text-[10px] text-muted-foreground/50">
                                 {b.sent_count}/{b.total_count} grupos
                               </span>

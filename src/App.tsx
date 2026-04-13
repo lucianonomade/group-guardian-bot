@@ -17,6 +17,7 @@ import SettingsPage from "./pages/SettingsPage";
 import Whitelist from "./pages/Whitelist";
 import BroadcastPage from "./pages/BroadcastPage";
 import GroupFinder from "./pages/GroupFinder";
+import Tutorial from "./pages/Tutorial";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/blocked-words" element={<ProtectedRoute><BlockedWords /></ProtectedRoute>} />
             <Route path="/whitelist" element={<ProtectedRoute><Whitelist /></ProtectedRoute>} />
             <Route path="/group-finder" element={<ProtectedRoute><GroupFinder /></ProtectedRoute>} />
+            <Route path="/tutorial" element={<ProtectedRoute><Tutorial /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

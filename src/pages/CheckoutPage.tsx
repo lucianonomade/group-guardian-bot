@@ -204,11 +204,11 @@ export default function CheckoutPage() {
                 </p>
               </CardHeader>
               <CardContent className="px-7 pb-7 space-y-5">
-                {pixData.pix_qrcode && (
+                {pixData.pix_code && (
                   <div className="flex justify-center">
                     <div className="p-4 bg-white rounded-xl">
                       <img
-                        src={pixData.pix_qrcode}
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(pixData.pix_code)}`}
                         alt="QR Code PIX"
                         className="w-48 h-48"
                       />

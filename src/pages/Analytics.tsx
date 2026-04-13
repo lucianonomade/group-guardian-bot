@@ -176,17 +176,29 @@ export default function Analytics() {
               <p className="mt-0.5 text-sm text-muted-foreground/60">Relatórios e estatísticas detalhadas</p>
             </div>
           </div>
-          <Select value={selectedGroup} onValueChange={setSelectedGroup}>
-            <SelectTrigger className="w-[220px] bg-muted/30 border-border/50">
-              <SelectValue placeholder="Filtrar por grupo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os grupos</SelectItem>
-              {groups.map(g => (
-                <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-3">
+            <Select value={selectedGroup} onValueChange={setSelectedGroup}>
+              <SelectTrigger className="w-[220px] bg-muted/30 border-border/50">
+                <SelectValue placeholder="Filtrar por grupo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os grupos</SelectItem>
+                {groups.map(g => (
+                  <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={triggerDailySummary}
+              disabled={generatingSummary}
+              className="gap-1.5 text-xs"
+            >
+              {generatingSummary ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              Gerar Resumo Agora
+            </Button>
+          </div>
         </motion.div>
 
         {loading ? (

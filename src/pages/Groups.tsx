@@ -13,7 +13,7 @@ import { WelcomeMessageDialog } from "@/components/WelcomeMessageDialog";
 import { AntifloodDialog } from "@/components/AntifloodDialog";
 import { GroupRulesDialog } from "@/components/GroupRulesDialog";
 import { toast } from "sonner";
-import { Users, Search, RefreshCw, MessageSquare, ShieldAlert, Eye, BookOpen } from "lucide-react";
+import { Users, Search, RefreshCw, MessageSquare, ShieldAlert, Eye, BookOpen, Archive } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { pageHeader, fadeUpItem, tableRowItem } from "@/lib/animations";
 
@@ -196,14 +196,15 @@ export default function Groups() {
                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Regras</TableHead>
                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Anti-flood</TableHead>
                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Status</TableHead>
-                     <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Monitorar</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Backup</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Monitorar</TableHead>
                    </TableRow>
                  </TableHeader>
                  <TableBody>
                    {loading ? (
-                      <TableRow><TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-10">Carregando...</TableCell></TableRow>
-                    ) : filtered.length === 0 ? (
-                      <TableRow><TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-10">
+                       <TableRow><TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-10">Carregando...</TableCell></TableRow>
+                     ) : filtered.length === 0 ? (
+                       <TableRow><TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-10">
                         {instances.length === 0 ? "Configure uma instância primeiro" : "Nenhum grupo encontrado"}
                      </TableCell></TableRow>
                    ) : (
@@ -263,7 +264,40 @@ export default function Groups() {
                               <ShieldAlert className="h-3 w-3" />
                               Configurar
                             </Button>
-                          </TableCell>
+                           </TableCell>
+                           <TableCell>
+                             <Button
+                               variant="ghost"
+                               size="sm"
+                               onClick={async () => {
+                                 try {
+                                   const [blockedRes, whitelistRes, antifloodRes] = await Promise.all([
+                                     supabase.from("blocked_words").select("word, category, is_active").eq("user_id", user!.id),
+                                     supabase.from("whitelist").select("participant_jid, participant_name").eq("group_id", group.id),
+                                     supabase.from("antiflood_settings").select("is_enabled, max_messages, time_window_seconds").eq("group_id", group.id).maybeSingle(),
+                                   ]);
+                                   const { error } = await supabase.from("group_backups").insert({
+                                     user_id: user!.id,
+                                     name: `Backup - ${group.name}`,
+                                     source_group_name: group.name,
+                                     rules_text: group.rules_text,
+                                     welcome_message: group.welcome_message,
+                                     blocked_words: blockedRes.data ?? [],
+                                     whitelist_entries: whitelistRes.data ?? [],
+                                     antiflood_settings: antifloodRes.data ?? null,
+                                   });
+                                   if (error) throw error;
+                                   toast.success("Backup criado com sucesso!");
+                                 } catch (err: any) {
+                                   toast.error(err.message || "Erro ao criar backup");
+                                 }
+                               }}
+                               className="text-xs gap-1.5 text-muted-foreground/50 hover:text-primary"
+                             >
+                               <Archive className="h-3 w-3" />
+                               Exportar
+                             </Button>
+                           </TableCell>
                           <TableCell>
                             <Badge variant={group.is_monitored ? "default" : "secondary"} className={group.is_monitored ? "bg-primary/15 text-primary border-primary/20 hover:bg-primary/20" : ""}>
                               {group.is_monitored ? "Ativo" : "Inativo"}

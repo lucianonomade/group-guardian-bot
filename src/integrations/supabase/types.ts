@@ -253,6 +253,45 @@ export type Database = {
           },
         ]
       }
+      group_backups: {
+        Row: {
+          antiflood_settings: Json | null
+          blocked_words: Json | null
+          created_at: string
+          id: string
+          name: string
+          rules_text: string | null
+          source_group_name: string | null
+          user_id: string
+          welcome_message: string | null
+          whitelist_entries: Json | null
+        }
+        Insert: {
+          antiflood_settings?: Json | null
+          blocked_words?: Json | null
+          created_at?: string
+          id?: string
+          name: string
+          rules_text?: string | null
+          source_group_name?: string | null
+          user_id: string
+          welcome_message?: string | null
+          whitelist_entries?: Json | null
+        }
+        Update: {
+          antiflood_settings?: Json | null
+          blocked_words?: Json | null
+          created_at?: string
+          id?: string
+          name?: string
+          rules_text?: string | null
+          source_group_name?: string | null
+          user_id?: string
+          welcome_message?: string | null
+          whitelist_entries?: Json | null
+        }
+        Relationships: []
+      }
       group_finder_tasks: {
         Row: {
           created_at: string

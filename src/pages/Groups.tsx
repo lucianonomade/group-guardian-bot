@@ -252,6 +252,7 @@ export default function Groups() {
                               <BookOpen className="h-3 w-3" />
                               {group.rules_text ? "Configuradas" : "Configurar"}
                             </Button>
+                          </TableCell>
                           <TableCell>
                             <Button
                               variant="ghost"

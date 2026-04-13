@@ -5,10 +5,12 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { BarChart3, TrendingUp, Users, Calendar, Trophy, AlertTriangle, Ban, FileText } from "lucide-react";
+import { BarChart3, TrendingUp, Users, Calendar, Trophy, AlertTriangle, Ban, FileText, Loader2, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, Area, AreaChart } from "recharts";
+import { toast } from "sonner";
 
 interface GroupOption {
   id: string;
@@ -56,6 +58,20 @@ export default function Analytics() {
   const [growthData, setGrowthData] = useState<GrowthPoint[]>([]);
   const [weeklyModeration, setWeeklyModeration] = useState<{ week: string; avisos: number; bans: number }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [generatingSummary, setGeneratingSummary] = useState(false);
+
+  const triggerDailySummary = async () => {
+    setGeneratingSummary(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("daily-summary", { method: "POST" as any });
+      if (error) throw error;
+      toast.success(`Resumo gerado para ${data?.processed || 0} de ${data?.total || 0} grupos!`);
+      fetchAnalytics();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao gerar resumo");
+    }
+    setGeneratingSummary(false);
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -160,17 +176,29 @@ export default function Analytics() {
               <p className="mt-0.5 text-sm text-muted-foreground/60">Relatórios e estatísticas detalhadas</p>
             </div>
           </div>
-          <Select value={selectedGroup} onValueChange={setSelectedGroup}>
-            <SelectTrigger className="w-[220px] bg-muted/30 border-border/50">
-              <SelectValue placeholder="Filtrar por grupo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os grupos</SelectItem>
-              {groups.map(g => (
-                <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-3">
+            <Select value={selectedGroup} onValueChange={setSelectedGroup}>
+              <SelectTrigger className="w-[220px] bg-muted/30 border-border/50">
+                <SelectValue placeholder="Filtrar por grupo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os grupos</SelectItem>
+                {groups.map(g => (
+                  <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={triggerDailySummary}
+              disabled={generatingSummary}
+              className="gap-1.5 text-xs"
+            >
+              {generatingSummary ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              Gerar Resumo Agora
+            </Button>
+          </div>
         </motion.div>
 
         {loading ? (

@@ -40,27 +40,26 @@ export function NotificationsDropdown() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
 
+  const fetchNotificationsRef = useRef(fetchNotifications);
+  fetchNotificationsRef.current = fetchNotifications;
+
   useEffect(() => {
     if (!user) return;
     
-    let isMounted = true;
-    fetchNotifications();
+    fetchNotificationsRef.current();
 
-    const channel = supabase.channel(`notif-${user.id}-${Date.now()}`);
-    
-    channel.on(
-      "postgres_changes" as any,
-      { event: "INSERT", schema: "public", table: "action_logs" },
-      () => {
-        if (isMounted) fetchNotifications();
-      }
-    );
-    
-    channel.subscribe();
+    const channelId = crypto.randomUUID();
+    const channel = supabase
+      .channel(channelId)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "action_logs", filter: `user_id=eq.${user.id}` },
+        () => { fetchNotificationsRef.current(); }
+      )
+      .subscribe();
 
     return () => {
-      isMounted = false;
-      supabase.removeChannel(channel);
+      channel.unsubscribe();
     };
   }, [user]);
 

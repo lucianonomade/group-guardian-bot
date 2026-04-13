@@ -17,13 +17,14 @@ export default function CheckoutPage() {
   const [pixData, setPixData] = useState<{ pix_code?: string; pix_qrcode?: string } | null>(null);
   const [customerName, setCustomerName] = useState("");
   const [customerDocument, setCustomerDocument] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
   const [copied, setCopied] = useState(false);
 
   if (!user) return <Navigate to="/login" replace />;
 
   const handleCreatePix = async () => {
-    if (!customerName.trim() || !customerDocument.trim()) {
-      toast.error("Preencha seu nome e CPF");
+    if (!customerName.trim() || !customerDocument.trim() || !customerPhone.trim()) {
+      toast.error("Preencha todos os campos");
       return;
     }
 
@@ -36,13 +37,11 @@ export default function CheckoutPage() {
 
       if (setupError) throw setupError;
 
-      // Get offer hash from the created/existing product
-      let offerHash = "";
-      if (setupData?.data?.data?.offers?.[0]?.hash) {
-        offerHash = setupData.data.data.offers[0].hash;
-      } else if (setupData?.data?.offers?.[0]?.hash) {
-        offerHash = setupData.data.offers[0].hash;
-      }
+      // Get offer hash from setup response
+      let offerHash = setupData?.offer_hash || 
+        setupData?.data?.offer_hash ||
+        setupData?.data?.data?.offers?.[0]?.hash ||
+        setupData?.data?.offers?.[0]?.hash || "";
 
       if (!offerHash) {
         // Try listing products to find existing offer
@@ -70,6 +69,7 @@ export default function CheckoutPage() {
           customer_name: customerName,
           customer_email: user.email,
           customer_document: customerDocument.replace(/\D/g, ""),
+          customer_phone: customerPhone.replace(/\D/g, ""),
         },
       });
 
@@ -159,6 +159,15 @@ export default function CheckoutPage() {
                     placeholder="000.000.000-00"
                     value={customerDocument}
                     onChange={(e) => setCustomerDocument(e.target.value)}
+                    className="rounded-xl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">Telefone</Label>
+                  <Input
+                    placeholder="(11) 99999-9999"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
                     className="rounded-xl"
                   />
                 </div>

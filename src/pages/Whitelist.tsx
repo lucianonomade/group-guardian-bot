@@ -10,21 +10,39 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ShieldCheck, Plus, Trash2, UserCheck, Download, Loader2 } from "lucide-react";
+import { ShieldCheck, Plus, Trash2, UserCheck, Download, Loader2, Search, Users } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion } from "framer-motion";
 import { pageHeader, fadeUpItem, tableRowItem } from "@/lib/animations";
+
+interface GroupMember {
+  jid: string;
+  name: string;
+  admin: string | null;
+}
 
 export default function Whitelist() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState("");
-  const [participantJid, setParticipantJid] = useState("");
-  const [participantName, setParticipantName] = useState("");
   const [filterGroupId, setFilterGroupId] = useState("all");
   const [importingGroupId, setImportingGroupId] = useState<string | null>(null);
+
+  // Member picker state
+  const [members, setMembers] = useState<GroupMember[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [memberSearch, setMemberSearch] = useState("");
+  const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set());
+  const [addingMembers, setAddingMembers] = useState(false);
+
+  // Manual mode fallback
+  const [manualMode, setManualMode] = useState(false);
+  const [participantJid, setParticipantJid] = useState("");
+  const [participantName, setParticipantName] = useState("");
 
   const { data: groups } = useQuery({
     queryKey: ["groups-with-instances", user?.id],
@@ -55,32 +73,118 @@ export default function Whitelist() {
     enabled: !!user,
   });
 
-  const addMutation = useMutation({
-    mutationFn: async () => {
-      const phone = participantJid.replace(/\D/g, "");
-      if (!phone || !selectedGroupId) throw new Error("Preencha todos os campos");
-      const jid = `${phone}@s.whatsapp.net`;
-      const { error } = await supabase.from("whitelist").insert({
-        user_id: user!.id,
-        group_id: selectedGroupId,
-        participant_jid: jid,
-        participant_name: participantName || null,
+  const loadGroupMembers = async (groupId: string) => {
+    const group = groups?.find((g: any) => g.id === groupId);
+    if (!group) return;
+
+    setLoadingMembers(true);
+    setMembers([]);
+    setSelectedMembers(new Set());
+    setMemberSearch("");
+
+    try {
+      const { data: inst } = await supabase
+        .from("instances")
+        .select("name")
+        .eq("id", group.instance_id)
+        .maybeSingle();
+
+      if (!inst) throw new Error("Instância não encontrada");
+
+      const queryStr = new URLSearchParams({
+        action: "fetch-group-participants",
+        instanceName: inst.name,
+        groupJid: group.group_jid,
+      }).toString();
+
+      const { data, error } = await supabase.functions.invoke(
+        `evolution-manager?${queryStr}`,
+        { method: "GET" as any }
+      );
+      if (error) throw error;
+
+      const parts: GroupMember[] = data?.participants || [];
+      // Sort admins first, then alphabetically
+      parts.sort((a, b) => {
+        if (a.admin && !b.admin) return -1;
+        if (!a.admin && b.admin) return 1;
+        return a.name.localeCompare(b.name);
       });
-      if (error) {
-        if (error.code === "23505") throw new Error("Este participante já está na whitelist deste grupo");
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["whitelist"] });
-      toast.success("Participante adicionado à whitelist!");
-      setDialogOpen(false);
-      setParticipantJid("");
-      setParticipantName("");
-      setSelectedGroupId("");
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
+      setMembers(parts);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao carregar membros do grupo");
+    }
+    setLoadingMembers(false);
+  };
+
+  const handleGroupSelect = (groupId: string) => {
+    setSelectedGroupId(groupId);
+    setManualMode(false);
+    loadGroupMembers(groupId);
+  };
+
+  const toggleMember = (jid: string) => {
+    setSelectedMembers((prev) => {
+      const next = new Set(prev);
+      if (next.has(jid)) next.delete(jid);
+      else next.add(jid);
+      return next;
+    });
+  };
+
+  const handleAddSelectedMembers = async () => {
+    if (!selectedGroupId || selectedMembers.size === 0) return;
+    setAddingMembers(true);
+
+    let added = 0;
+    for (const jid of selectedMembers) {
+      const member = members.find((m) => m.jid === jid);
+      const { error } = await supabase.from("whitelist").upsert(
+        {
+          user_id: user!.id,
+          group_id: selectedGroupId,
+          participant_jid: jid,
+          participant_name: member?.name || null,
+        },
+        { onConflict: "user_id,group_id,participant_jid" }
+      );
+      if (!error) added++;
+    }
+
+    queryClient.invalidateQueries({ queryKey: ["whitelist"] });
+    toast.success(`${added} membro(s) adicionado(s) à whitelist!`);
+    setDialogOpen(false);
+    setSelectedMembers(new Set());
+    setMembers([]);
+    setSelectedGroupId("");
+    setAddingMembers(false);
+  };
+
+  const handleAddManual = async () => {
+    const phone = participantJid.replace(/\D/g, "");
+    if (!phone || !selectedGroupId) {
+      toast.error("Preencha todos os campos");
+      return;
+    }
+    const jid = `${phone}@s.whatsapp.net`;
+    const { error } = await supabase.from("whitelist").insert({
+      user_id: user!.id,
+      group_id: selectedGroupId,
+      participant_jid: jid,
+      participant_name: participantName || null,
+    });
+    if (error) {
+      if (error.code === "23505") toast.error("Já está na whitelist deste grupo");
+      else toast.error("Erro ao adicionar");
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ["whitelist"] });
+    toast.success("Participante adicionado à whitelist!");
+    setDialogOpen(false);
+    setParticipantJid("");
+    setParticipantName("");
+    setSelectedGroupId("");
+  };
 
   const removeMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -149,6 +253,12 @@ export default function Whitelist() {
     ? whitelist
     : whitelist?.filter((w: any) => w.group_id === filterGroupId);
 
+  const filteredMembers = members.filter(
+    (m) =>
+      m.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
+      m.jid.includes(memberSearch)
+  );
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -196,21 +306,35 @@ export default function Whitelist() {
               </DialogContent>
             </Dialog>
 
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <Dialog open={dialogOpen} onOpenChange={(open) => {
+              setDialogOpen(open);
+              if (!open) {
+                setSelectedGroupId("");
+                setMembers([]);
+                setSelectedMembers(new Set());
+                setManualMode(false);
+                setMemberSearch("");
+                setParticipantJid("");
+                setParticipantName("");
+              }
+            }}>
               <DialogTrigger asChild>
                 <Button size="sm" className="bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-500/90 shadow-lg shadow-primary/20 text-xs">
                   <Plus className="h-3.5 w-3.5 mr-1.5" /> Adicionar
                 </Button>
               </DialogTrigger>
-              <DialogContent className="glass-card border-border/50">
+              <DialogContent className="glass-card border-border/50 max-w-lg">
                 <DialogHeader>
                   <DialogTitle className="text-base">Adicionar à Whitelist</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 pt-2">
+                  {/* Group selector */}
                   <div className="space-y-1.5">
                     <Label className="text-xs text-muted-foreground">Grupo</Label>
-                    <Select value={selectedGroupId} onValueChange={setSelectedGroupId}>
-                      <SelectTrigger className="bg-muted/30 border-border/50"><SelectValue placeholder="Selecione o grupo" /></SelectTrigger>
+                    <Select value={selectedGroupId} onValueChange={handleGroupSelect}>
+                      <SelectTrigger className="bg-muted/30 border-border/50">
+                        <SelectValue placeholder="Selecione o grupo" />
+                      </SelectTrigger>
                       <SelectContent>
                         {groups?.map((g) => (
                           <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
@@ -218,28 +342,127 @@ export default function Whitelist() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Número do WhatsApp</Label>
-                    <Input
-                      placeholder="5511999999999"
-                      value={participantJid}
-                      onChange={(e) => setParticipantJid(e.target.value)}
-                      className="bg-muted/30 border-border/50"
-                    />
-                    <p className="text-[10px] text-muted-foreground/50">País + DDD + número (sem espaços)</p>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Nome (opcional)</Label>
-                    <Input
-                      placeholder="Nome do participante"
-                      value={participantName}
-                      onChange={(e) => setParticipantName(e.target.value)}
-                      className="bg-muted/30 border-border/50"
-                    />
-                  </div>
-                  <Button className="w-full bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-500/90 shadow-lg shadow-primary/20" onClick={() => addMutation.mutate()} disabled={addMutation.isPending}>
-                    {addMutation.isPending ? "Adicionando..." : "Adicionar"}
-                  </Button>
+
+                  {/* Members list or loading */}
+                  {selectedGroupId && !manualMode && (
+                    <>
+                      {loadingMembers ? (
+                        <div className="flex items-center justify-center py-8 text-muted-foreground">
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          <span className="text-sm">Carregando membros...</span>
+                        </div>
+                      ) : members.length > 0 ? (
+                        <div className="space-y-3">
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/50" />
+                            <Input
+                              placeholder="Buscar membro..."
+                              value={memberSearch}
+                              onChange={(e) => setMemberSearch(e.target.value)}
+                              className="pl-9 bg-muted/30 border-border/50 h-9 text-sm"
+                            />
+                          </div>
+
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Users className="h-3 w-3" />
+                              {filteredMembers.length} membros
+                            </span>
+                            <span>{selectedMembers.size} selecionado(s)</span>
+                          </div>
+
+                          <ScrollArea className="h-[240px] rounded-md border border-border/30 bg-muted/10">
+                            <div className="p-1">
+                              {filteredMembers.map((m) => (
+                                <label
+                                  key={m.jid}
+                                  className="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer hover:bg-muted/20 transition-colors"
+                                >
+                                  <Checkbox
+                                    checked={selectedMembers.has(m.jid)}
+                                    onCheckedChange={() => toggleMember(m.jid)}
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium truncate">{m.name}</p>
+                                    <p className="text-[10px] text-muted-foreground/50 font-mono">
+                                      {m.jid.split("@")[0]}
+                                    </p>
+                                  </div>
+                                  {m.admin && (
+                                    <Badge className="bg-amber-500/15 text-amber-500 border-amber-500/20 text-[10px] shrink-0">
+                                      {m.admin === "superadmin" ? "Super" : "Admin"}
+                                    </Badge>
+                                  )}
+                                </label>
+                              ))}
+                            </div>
+                          </ScrollArea>
+
+                          <Button
+                            className="w-full bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-500/90 shadow-lg shadow-primary/20"
+                            onClick={handleAddSelectedMembers}
+                            disabled={selectedMembers.size === 0 || addingMembers}
+                          >
+                            {addingMembers ? (
+                              <><Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> Adicionando...</>
+                            ) : (
+                              `Adicionar ${selectedMembers.size} membro(s)`
+                            )}
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="text-center py-6 text-sm text-muted-foreground">
+                          Nenhum membro encontrado
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        className="text-xs text-muted-foreground/60 hover:text-primary underline mx-auto block"
+                        onClick={() => setManualMode(true)}
+                      >
+                        Adicionar manualmente por número
+                      </button>
+                    </>
+                  )}
+
+                  {/* Manual mode */}
+                  {selectedGroupId && manualMode && (
+                    <>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">Número do WhatsApp</Label>
+                        <Input
+                          placeholder="5511999999999"
+                          value={participantJid}
+                          onChange={(e) => setParticipantJid(e.target.value)}
+                          className="bg-muted/30 border-border/50"
+                        />
+                        <p className="text-[10px] text-muted-foreground/50">País + DDD + número (sem espaços)</p>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">Nome (opcional)</Label>
+                        <Input
+                          placeholder="Nome do participante"
+                          value={participantName}
+                          onChange={(e) => setParticipantName(e.target.value)}
+                          className="bg-muted/30 border-border/50"
+                        />
+                      </div>
+                      <Button
+                        className="w-full bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-500/90 shadow-lg shadow-primary/20"
+                        onClick={handleAddManual}
+                      >
+                        Adicionar
+                      </Button>
+                      <button
+                        type="button"
+                        className="text-xs text-muted-foreground/60 hover:text-primary underline mx-auto block"
+                        onClick={() => setManualMode(false)}
+                      >
+                        Voltar para lista de membros
+                      </button>
+                    </>
+                  )}
                 </div>
               </DialogContent>
             </Dialog>

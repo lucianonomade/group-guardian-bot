@@ -102,7 +102,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
           <p className="mb-3 px-3 text-[9px] font-bold uppercase tracking-[0.25em] text-sidebar-foreground/25">
             Navegação
           </p>
-          {navItems.map(item => {
+          {allNavItems.map(item => {
             const isActive = location.pathname === item.href;
             return (
               <Link

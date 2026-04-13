@@ -124,6 +124,7 @@ export default function CheckoutPage() {
         setPixData({
           pix_code: txData.data.pix_code || txData.data.pix?.code || "",
           pix_qrcode: txData.data.pix_qrcode || txData.data.pix?.qrcode || "",
+          transaction_id: txData.data.transaction_id || "",
         });
         toast.success("PIX gerado com sucesso!");
       } else {

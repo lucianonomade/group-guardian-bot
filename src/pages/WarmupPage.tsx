@@ -132,6 +132,33 @@ export default function WarmupPage() {
 
       const plan = customPlan.slice(0, totalDays).map((p, i) => ({ day: i + 1, messages: p.messages }));
 
+      // Parse custom messages
+      const msgs = customMessages
+        .split("\n")
+        .map(m => m.trim())
+        .filter(m => m.length > 0);
+
+      // Upload images
+      let uploadedUrls: string[] = [];
+      if (imageFiles.length > 0) {
+        setUploadingImages(true);
+        for (const file of imageFiles) {
+          const filePath = `${user!.id}/${Date.now()}-${file.name}`;
+          const { error: uploadErr } = await supabase.storage
+            .from("warmup-images")
+            .upload(filePath, file);
+          if (uploadErr) {
+            console.error("Upload error:", uploadErr);
+            continue;
+          }
+          const { data: urlData } = supabase.storage
+            .from("warmup-images")
+            .getPublicUrl(filePath);
+          uploadedUrls.push(urlData.publicUrl);
+        }
+        setUploadingImages(false);
+      }
+
       const { error } = await supabase.from("warmup_tasks").insert({
         user_id: user!.id,
         instance_id: instanceId,
@@ -139,6 +166,8 @@ export default function WarmupPage() {
         target_numbers: targets,
         total_days: totalDays,
         schedule_plan: plan,
+        custom_messages: msgs,
+        image_urls: uploadedUrls,
         status: "pending",
       });
       if (error) throw error;
@@ -149,6 +178,8 @@ export default function WarmupPage() {
       setCreateOpen(false);
       setPhoneNumber("");
       setTargetNumbers("");
+      setCustomMessages("");
+      setImageFiles([]);
     },
     onError: (e: any) => toast.error(e.message || "Erro ao criar maturação"),
   });

@@ -253,6 +253,48 @@ export type Database = {
           },
         ]
       }
+      group_finder_tasks: {
+        Row: {
+          created_at: string
+          groups_found: number
+          groups_joined: number
+          id: string
+          instance_id: string
+          invite_links: string[]
+          results: Json
+          status: string
+          theme: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          groups_found?: number
+          groups_joined?: number
+          id?: string
+          instance_id: string
+          invite_links?: string[]
+          results?: Json
+          status?: string
+          theme?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          groups_found?: number
+          groups_joined?: number
+          id?: string
+          instance_id?: string
+          invite_links?: string[]
+          results?: Json
+          status?: string
+          theme?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       group_snapshots: {
         Row: {
           created_at: string

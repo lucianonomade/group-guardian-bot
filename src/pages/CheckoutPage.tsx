@@ -17,6 +17,7 @@ export default function CheckoutPage() {
   const [pixData, setPixData] = useState<{ pix_code?: string; pix_qrcode?: string } | null>(null);
   const [customerName, setCustomerName] = useState("");
   const [customerDocument, setCustomerDocument] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
   const [copied, setCopied] = useState(false);
 
   if (!user) return <Navigate to="/login" replace />;

@@ -27,6 +27,8 @@ export default function ValidateNumbers() {
   const [instanceId, setInstanceId] = useState("");
   const [numbersText, setNumbersText] = useState("");
   const [loading, setLoading] = useState(false);
+  const [importingGroup, setImportingGroup] = useState<string | null>(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [results, setResults] = useState<ValidationResult[] | null>(null);
   const [stats, setStats] = useState<{ total: number; valid: number; invalid: number } | null>(null);
 

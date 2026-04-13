@@ -23,57 +23,27 @@ const features = [
 
 const plans = [
   {
-    name: "Básico",
-    price: "49",
+    name: "WhatsGuard Pro",
+    price: "100",
     period: "/mês",
-    description: "Ideal para quem está começando",
-    features: [
-      "1 instância WhatsApp",
-      "Até 5 grupos monitorados",
-      "Moderação automática",
-      "Palavras bloqueadas",
-      "Sistema de avisos",
-      "Banimentos",
-      "Whitelist",
-      "Suporte por e-mail",
-    ],
-    highlight: false,
-  },
-  {
-    name: "Profissional",
-    price: "99",
-    period: "/mês",
-    description: "Para quem precisa de mais poder",
-    features: [
-      "3 instâncias WhatsApp",
-      "Até 30 grupos monitorados",
-      "Tudo do plano Básico",
-      "Divulgação em massa",
-      "Buscador de grupos",
-      "Validar números (2.000/mês)",
-      "Analytics avançado",
-      "Anti-flood",
-      "Suporte prioritário",
-    ],
-    highlight: true,
-  },
-  {
-    name: "Enterprise",
-    price: "199",
-    period: "/mês",
-    description: "Controle total sem limites",
+    description: "Acesso completo a todas as funcionalidades",
     features: [
       "Instâncias ilimitadas",
       "Grupos ilimitados",
-      "Tudo do plano Profissional",
+      "Moderação automática 24/7",
+      "Palavras bloqueadas",
+      "Sistema de avisos",
+      "Banimentos com histórico",
+      "Whitelist de membros VIP",
+      "Divulgação em massa",
+      "Buscador de grupos",
       "Validar números ilimitados",
-      "Resumo diário com IA",
-      "API de integração",
+      "Analytics avançado",
+      "Anti-flood",
       "Agendamento de broadcasts",
-      "Gerente de conta dedicado",
-      "SLA de atendimento",
+      "Suporte prioritário",
     ],
-    highlight: false,
+    highlight: true,
   },
 ];
 
@@ -209,7 +179,7 @@ export default function LandingPage() {
             Escolha o plano ideal para o tamanho da sua operação
           </p>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-5xl mx-auto items-start">
+        <div className="flex justify-center max-w-lg mx-auto">
           {plans.map((plan, i) => (
             <motion.div
               key={plan.name}

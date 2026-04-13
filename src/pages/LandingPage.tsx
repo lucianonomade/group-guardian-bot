@@ -212,6 +212,9 @@ export default function LandingPage() {
                     <span className="text-4xl font-extrabold tracking-tight gradient-text">{plan.price}</span>
                     <span className="text-sm text-muted-foreground/40">{plan.period}</span>
                   </div>
+                  {plan.trial && (
+                    <p className="text-xs font-semibold text-primary mt-2">🎉 {plan.trial}</p>
+                  )}
                 </CardHeader>
                 <CardContent className="px-7 pb-7 pt-5">
                   <ul className="space-y-3 mb-7">

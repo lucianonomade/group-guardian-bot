@@ -9,6 +9,7 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
+    "start": "vite preview --port ${PORT:-3000} --host",
     "test": "vitest run",
     "test:watch": "vitest"
   },

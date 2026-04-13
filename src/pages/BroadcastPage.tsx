@@ -15,7 +15,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Megaphone, Search, ImagePlus, Send, Loader2, Trash2, Clock, CheckCircle, XCircle, Users, RefreshCw, CalendarIcon, Timer } from "lucide-react";
+import { Megaphone, Search, ImagePlus, Send, Loader2, Trash2, Clock, CheckCircle, XCircle, Users, RefreshCw, CalendarIcon, Timer, Repeat } from "lucide-react";
 import { motion } from "framer-motion";
 import { pageHeader, fadeUpItem, staggerContainer, scaleUpItem } from "@/lib/animations";
 import { format } from "date-fns";
@@ -63,6 +63,7 @@ export default function BroadcastPage() {
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>(undefined);
   const [scheduledHour, setScheduledHour] = useState("12");
   const [scheduledMinute, setScheduledMinute] = useState("00");
+  const [recurrence, setRecurrence] = useState<string>("none");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Check for scheduled broadcasts to process

@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => ({
   },
   preview: {
     host: "0.0.0.0",
-    allowedHosts: ["all", "index-sistemamod.ps261p.easypanel.host"],
+    allowedHosts: true,
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {

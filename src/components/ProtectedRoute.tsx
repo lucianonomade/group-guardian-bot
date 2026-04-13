@@ -7,6 +7,20 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const location = useLocation();
 
+  const { data: isAdmin, isLoading: adminLoading } = useQuery({
+    queryKey: ["isAdmin", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user!.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      return !!data;
+    },
+    enabled: !!user,
+  });
+
   const { data: subscription, isLoading: subLoading } = useQuery({
     queryKey: ["subscription", user?.id],
     queryFn: async () => {
@@ -23,10 +37,10 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
       if (error) throw error;
       return data;
     },
-    enabled: !!user,
+    enabled: !!user && !isAdmin,
   });
 
-  if (loading || subLoading) {
+  if (loading || adminLoading || (!isAdmin && subLoading)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -38,7 +52,11 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  // Allow access to subscription page even without active sub
+  // Admins bypass subscription check
+  if (isAdmin) {
+    return <>{children}</>;
+  }
+
   if (location.pathname === "/subscription") {
     return <>{children}</>;
   }

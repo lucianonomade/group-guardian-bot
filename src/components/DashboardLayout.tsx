@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
 const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/groups", label: "Grupos", icon: Users },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/broadcast", label: "Divulgação", icon: Megaphone },

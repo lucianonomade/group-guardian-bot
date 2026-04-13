@@ -49,24 +49,48 @@ export default function ValidateNumbers() {
     enabled: !!user,
   });
 
-  const { data: groups } = useQuery({
-    queryKey: ["groups-with-instances", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("groups")
-        .select("*, instances(*)")
-        .eq("user_id", user!.id)
-        .eq("is_monitored", true)
-        .order("name");
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user,
-  });
+  // Fetch all groups from Evolution API when dialog opens
+  const fetchAllGroups = async () => {
+    if (!instances?.length) {
+      toast.error("Nenhuma instância encontrada");
+      return;
+    }
+    setLoadingGroups(true);
+    try {
+      const inst = instances[0]; // Use first instance
+      const session = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/evolution-manager?action=fetch-all-groups&instanceName=${inst.name}`,
+        {
+          headers: {
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${session.data.session?.access_token}`,
+          },
+        }
+      );
+      const data = await res.json();
+      const groups = data?.groups || [];
+      // Attach instance info to each group
+      setAllGroups(groups.map((g: any) => ({ ...g, instance: inst })));
+    } catch (e) {
+      console.error("Fetch groups error:", e);
+      toast.error("Erro ao buscar grupos");
+    } finally {
+      setLoadingGroups(false);
+    }
+  };
 
-  const importGroupMembers = async (groupId: string) => {
-    const group = groups?.find((g: any) => g.id === groupId);
-    if (!group || !group.instances) return;
+  const handleOpenImportDialog = (open: boolean) => {
+    setImportDialogOpen(open);
+    if (open) {
+      setGroupSearch("");
+      fetchAllGroups();
+    }
+  };
+
+  const importGroupMembers = async (groupJid: string, groupName: string) => {
+    if (!instances?.length) return;
+    const inst = instances[0];
 
     setImportingGroup(groupId);
     try {

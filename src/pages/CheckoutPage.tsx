@@ -146,6 +146,19 @@ export default function CheckoutPage() {
       </nav>
 
       <div className="relative z-10 max-w-lg mx-auto px-6 py-16">
+        {isTrialExpired && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+            <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4 flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-yellow-400">Seu período de teste expirou</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Seus 3 dias grátis acabaram. Assine o WhatsGuard Pro para continuar usando todas as funcionalidades.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           {!pixData ? (
             <Card className="rounded-2xl border-primary/20 shadow-2xl shadow-primary/10 bg-card/80">

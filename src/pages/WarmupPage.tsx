@@ -354,6 +354,14 @@ export default function WarmupPage() {
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-1">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8"
+                                  onClick={() => { setSelectedTaskId(task.id); setLogsOpen(true); }}
+                                >
+                                  <History className="h-4 w-4 text-muted-foreground" />
+                                </Button>
                                 {task.status !== "completed" && (
                                   <Button
                                     size="icon"

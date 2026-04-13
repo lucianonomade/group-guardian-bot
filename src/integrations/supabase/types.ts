@@ -551,7 +551,9 @@ export type Database = {
         Row: {
           created_at: string
           current_day: number
+          custom_messages: string[]
           id: string
+          image_urls: string[]
           instance_id: string
           last_message_at: string | null
           max_messages_today: number
@@ -568,7 +570,9 @@ export type Database = {
         Insert: {
           created_at?: string
           current_day?: number
+          custom_messages?: string[]
           id?: string
+          image_urls?: string[]
           instance_id: string
           last_message_at?: string | null
           max_messages_today?: number
@@ -585,7 +589,9 @@ export type Database = {
         Update: {
           created_at?: string
           current_day?: number
+          custom_messages?: string[]
           id?: string
+          image_urls?: string[]
           instance_id?: string
           last_message_at?: string | null
           max_messages_today?: number

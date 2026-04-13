@@ -153,6 +153,46 @@ export default function Index() {
 
   const totalActions = actionBreakdown.reduce((sum, item) => sum + item.value, 0);
 
+  const exportReport = () => {
+    const lines: string[] = [];
+    lines.push("WhatsGuard - Relatório de Moderação");
+    lines.push(`Data: ${new Date().toLocaleDateString("pt-BR")} ${new Date().toLocaleTimeString("pt-BR")}`);
+    lines.push("");
+    lines.push("=== ESTATÍSTICAS GERAIS ===");
+    lines.push(`Grupos Monitorados: ${stats.monitoredGroups}/${stats.groups}`);
+    lines.push(`Avisos: ${stats.warnings}`);
+    lines.push(`Banimentos Ativos: ${stats.bans}`);
+    lines.push(`Palavras Bloqueadas: ${stats.blockedWords}`);
+    lines.push(`Whitelist: ${stats.whitelistCount}`);
+    lines.push("");
+    lines.push("=== ATIVIDADE DOS ÚLTIMOS 7 DIAS ===");
+    lines.push("Dia,Mensagens Filtradas");
+    dailyData.forEach(d => lines.push(`${d.day},${d.msgs}`));
+    lines.push("");
+    lines.push("=== TIPOS DE AÇÃO ===");
+    lines.push("Tipo,Quantidade");
+    actionBreakdown.forEach(a => lines.push(`${a.name},${a.value}`));
+    lines.push(`Total,${totalActions}`);
+    lines.push("");
+    lines.push("=== ATIVIDADE RECENTE ===");
+    lines.push("Data,Tipo,Participante,Detalhes");
+    recentLogs.forEach(log => {
+      const date = new Date(log.created_at).toLocaleString("pt-BR");
+      const type = ACTION_TYPE_MAP[log.action_type]?.label || log.action_type;
+      const name = log.participant_name || "-";
+      const details = (log.details || "-").replace(/,/g, ";");
+      lines.push(`${date},${type},${name},${details}`);
+    });
+
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `whatsguard-report-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const statCards = [
     { label: "GROUPS", value: stats.monitoredGroups, total: stats.groups, icon: Users, iconBg: "bg-primary/15", iconColor: "text-primary" },
     { label: "WARNINGS", value: stats.warnings, icon: AlertTriangle, iconBg: "bg-amber-500/15", iconColor: "text-amber-400" },
@@ -175,7 +215,7 @@ export default function Index() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Button variant="outline" className="border-primary/30 text-primary hover:bg-primary/10 text-xs font-bold tracking-wider uppercase gap-2">
+              <Button variant="outline" onClick={exportReport} className="border-primary/30 text-primary hover:bg-primary/10 text-xs font-bold tracking-wider uppercase gap-2">
                 <FileDown className="h-3.5 w-3.5" />
                 Export Report
               </Button>

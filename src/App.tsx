@@ -22,6 +22,7 @@ import Tutorial from "./pages/Tutorial";
 import ValidateNumbers from "./pages/ValidateNumbers";
 import NotFound from "./pages/NotFound";
 import CheckoutPage from "./pages/CheckoutPage";
+import SubscriptionPage from "./pages/SubscriptionPage";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const App = () => (
             <Route path="/whitelist" element={<ProtectedRoute><Whitelist /></ProtectedRoute>} />
             <Route path="/group-finder" element={<ProtectedRoute><GroupFinder /></ProtectedRoute>} />
             <Route path="/validate-numbers" element={<ProtectedRoute><ValidateNumbers /></ProtectedRoute>} />
+            <Route path="/subscription" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
             <Route path="/tutorial" element={<ProtectedRoute><Tutorial /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />

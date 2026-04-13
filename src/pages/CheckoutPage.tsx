@@ -162,6 +162,15 @@ export default function CheckoutPage() {
                     className="rounded-xl"
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">Telefone</Label>
+                  <Input
+                    placeholder="(11) 99999-9999"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    className="rounded-xl"
+                  />
+                </div>
 
                 <ul className="space-y-2 py-3 border-t border-border/20">
                   {["Instâncias ilimitadas", "Moderação 24/7", "Todos os recursos", "Suporte prioritário"].map((f) => (

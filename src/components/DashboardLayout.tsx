@@ -109,7 +109,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
               WhatsGuard
             </span>
             <span className="text-[9px] font-semibold text-primary/50 uppercase tracking-[0.2em]">
-              Sentinel Protocol V2.4
+              ​
             </span>
           </div>
           <Button variant="ghost" size="icon" className="ml-auto text-sidebar-foreground/40 lg:hidden" onClick={() => setSidebarOpen(false)}>

@@ -14,12 +14,14 @@ import { motion } from "framer-motion";
 
 export default function CheckoutPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [pixData, setPixData] = useState<{ pix_code?: string; pix_qrcode?: string } | null>(null);
+  const [pixData, setPixData] = useState<{ pix_code?: string; pix_qrcode?: string; transaction_id?: string } | null>(null);
   const [customerName, setCustomerName] = useState("");
   const [customerDocument, setCustomerDocument] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [copied, setCopied] = useState(false);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { data: expiredTrial } = useQuery({
     queryKey: ["expired-trial", user?.id],
@@ -38,6 +40,30 @@ export default function CheckoutPage() {
   });
 
   const isTrialExpired = expiredTrial && expiredTrial.expires_at && new Date(expiredTrial.expires_at) < new Date();
+
+  // Poll for payment confirmation
+  useEffect(() => {
+    if (!pixData?.transaction_id || !user) return;
+
+    pollingRef.current = setInterval(async () => {
+      const { data } = await supabase
+        .from("subscriptions")
+        .select("status")
+        .eq("user_id", user.id)
+        .eq("pepper_transaction_id", pixData.transaction_id!)
+        .maybeSingle();
+
+      if (data?.status === "active") {
+        if (pollingRef.current) clearInterval(pollingRef.current);
+        toast.success("Pagamento confirmado! Redirecionando...");
+        setTimeout(() => navigate("/dashboard"), 1500);
+      }
+    }, 5000);
+
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+  }, [pixData?.transaction_id, user, navigate]);
 
   if (!user) return <Navigate to="/login" replace />;
 

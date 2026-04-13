@@ -47,6 +47,9 @@ export default function WarmupPage() {
   const [customPlan, setCustomPlan] = useState(DEFAULT_PLAN);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [logsOpen, setLogsOpen] = useState(false);
+  const [customMessages, setCustomMessages] = useState("");
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   const { data: instances } = useQuery({
     queryKey: ["instances", user?.id],

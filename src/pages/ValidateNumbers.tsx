@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Phone, CheckCircle2, XCircle, Loader2, Copy, Download, Users } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
 import { pageHeader, fadeUpItem } from "@/lib/animations";
 import { Label } from "@/components/ui/label";
@@ -28,6 +29,8 @@ export default function ValidateNumbers() {
   const [instanceId, setInstanceId] = useState("");
   const [numbersText, setNumbersText] = useState("");
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [progressLabel, setProgressLabel] = useState("");
   const [importingGroup, setImportingGroup] = useState<string | null>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [groupSearch, setGroupSearch] = useState("");
@@ -170,18 +173,41 @@ export default function ValidateNumbers() {
     setLoading(true);
     setResults(null);
     setStats(null);
+    setProgress(0);
+    setProgressLabel("");
 
     try {
-      const { data, error } = await supabase.functions.invoke("validate-numbers", {
-        body: { numbers: lines, instanceId },
-      });
+      const batchSize = 200;
+      const allResults: ValidationResult[] = [];
+      const totalNumbers = lines.length;
 
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
+      for (let i = 0; i < totalNumbers; i += batchSize) {
+        const batch = lines.slice(i, i + batchSize);
+        const batchNum = Math.floor(i / batchSize) + 1;
+        const totalBatches = Math.ceil(totalNumbers / batchSize);
 
-      setResults(data.results);
-      setStats({ total: data.total, valid: data.valid, invalid: data.invalid });
-      toast.success(`${data.valid} válido(s) de ${data.total} número(s)`);
+        setProgressLabel(`Lote ${batchNum}/${totalBatches} (${Math.min(i + batchSize, totalNumbers)}/${totalNumbers})`);
+        setProgress(Math.round((i / totalNumbers) * 100));
+
+        const { data, error } = await supabase.functions.invoke("validate-numbers", {
+          body: { numbers: batch, instanceId },
+        });
+
+        if (error) throw error;
+        if (data.error) throw new Error(data.error);
+
+        allResults.push(...(data.results || []));
+      }
+
+      setProgress(100);
+      setProgressLabel("Concluído!");
+
+      const valid = allResults.filter(r => r.exists).length;
+      const invalid = allResults.filter(r => !r.exists).length;
+
+      setResults(allResults);
+      setStats({ total: allResults.length, valid, invalid });
+      toast.success(`${valid} válido(s) de ${allResults.length} número(s)`);
     } catch (e: any) {
       toast.error(e.message || "Erro ao validar");
     } finally {
@@ -314,6 +340,13 @@ export default function ValidateNumbers() {
                   Formato: código do país + DDD + número (ex: 5511999999999)
                 </p>
               </div>
+
+              {loading && (
+                <div className="space-y-2">
+                  <Progress value={progress} className="h-2" />
+                  <p className="text-xs text-muted-foreground text-center">{progressLabel} — {progress}%</p>
+                </div>
+              )}
 
               <Button
                 className="w-full bg-gradient-to-r from-primary to-emerald-500 hover:from-primary/90 hover:to-emerald-500/90 shadow-lg shadow-primary/20"

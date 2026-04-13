@@ -184,7 +184,7 @@ Deno.serve(async (req) => {
             user_id: task.user_id,
             warmup_task_id: task.id,
             target_number: targetNumber,
-            message_text: message,
+            message_text: sentContent,
             status: "error",
             error_details: errText.slice(0, 500),
             day_number: task.current_day,

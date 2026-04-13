@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
@@ -29,6 +30,9 @@ export default function ValidateNumbers() {
   const [loading, setLoading] = useState(false);
   const [importingGroup, setImportingGroup] = useState<string | null>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [groupSearch, setGroupSearch] = useState("");
+  const [allGroups, setAllGroups] = useState<any[]>([]);
+  const [loadingGroups, setLoadingGroups] = useState(false);
   const [results, setResults] = useState<ValidationResult[] | null>(null);
   const [stats, setStats] = useState<{ total: number; valid: number; invalid: number } | null>(null);
 
@@ -46,33 +50,55 @@ export default function ValidateNumbers() {
     enabled: !!user,
   });
 
-  const { data: groups } = useQuery({
-    queryKey: ["groups-with-instances", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("groups")
-        .select("*, instances(*)")
-        .eq("user_id", user!.id)
-        .eq("is_monitored", true)
-        .order("name");
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user,
-  });
-
-  const importGroupMembers = async (groupId: string) => {
-    const group = groups?.find((g: any) => g.id === groupId);
-    if (!group || !group.instances) return;
-
-    setImportingGroup(groupId);
+  // Fetch all groups from Evolution API when dialog opens
+  const fetchAllGroups = async () => {
+    if (!instances?.length) {
+      toast.error("Nenhuma instância encontrada");
+      return;
+    }
+    setLoadingGroups(true);
     try {
-      const instance = group.instances as any;
+      const inst = instances[0]; // Use first instance
+      const session = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/evolution-manager?action=fetch-all-groups&instanceName=${inst.name}`,
+        {
+          headers: {
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${session.data.session?.access_token}`,
+          },
+        }
+      );
+      const data = await res.json();
+      const groups = data?.groups || [];
+      // Attach instance info to each group
+      setAllGroups(groups.map((g: any) => ({ ...g, instance: inst })));
+    } catch (e) {
+      console.error("Fetch groups error:", e);
+      toast.error("Erro ao buscar grupos");
+    } finally {
+      setLoadingGroups(false);
+    }
+  };
 
+  const handleOpenImportDialog = (open: boolean) => {
+    setImportDialogOpen(open);
+    if (open) {
+      setGroupSearch("");
+      fetchAllGroups();
+    }
+  };
+
+  const importGroupMembers = async (groupJid: string, groupName: string) => {
+    if (!instances?.length) return;
+    const inst = instances[0];
+
+    setImportingGroup(groupJid);
+    try {
       // Call Evolution API directly to get participant phone numbers
       const res = await fetch(
-        `${instance.api_url}/group/participants/${instance.name}?groupJid=${group.group_jid}`,
-        { headers: { apikey: instance.api_key } }
+        `${inst.api_url}/group/participants/${inst.name}?groupJid=${groupJid}`,
+        { headers: { apikey: inst.api_key } }
       );
       const data = await res.json();
       
@@ -111,7 +137,7 @@ export default function ValidateNumbers() {
       const newText = existing ? `${existing}\n${numbers.join("\n")}` : numbers.join("\n");
       setNumbersText(newText);
       setImportDialogOpen(false);
-      toast.success(`${numbers.length} número(s) importado(s) do grupo "${group.name}"`);
+      toast.success(`${numbers.length} número(s) importado(s) do grupo "${groupName}"`);
     } catch (e) {
       console.error("Import error:", e);
       toast.error("Erro ao importar membros do grupo");
@@ -224,39 +250,55 @@ export default function ValidateNumbers() {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs text-muted-foreground">Números</Label>
-                  <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+                  <Dialog open={importDialogOpen} onOpenChange={handleOpenImportDialog}>
                     <DialogTrigger asChild>
                       <Button variant="outline" size="sm" className="text-xs border-border/50 h-7">
                         <Users className="h-3 w-3 mr-1" /> Importar do Grupo
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="glass-card border-border/50">
+                    <DialogContent className="glass-card border-border/50 max-h-[80vh]">
                       <DialogHeader>
                         <DialogTitle className="text-base">Importar Membros do Grupo</DialogTitle>
                       </DialogHeader>
-                      <p className="text-xs text-muted-foreground">Selecione um grupo para importar os números dos membros.</p>
-                      <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                        {groups?.map((g: any) => (
-                          <Button
-                            key={g.id}
-                            variant="outline"
-                            className="w-full justify-between border-border/30 hover:border-primary/30 hover:bg-primary/5 text-sm"
-                            disabled={importingGroup === g.id}
-                            onClick={() => importGroupMembers(g.id)}
-                          >
-                            <span className="truncate">{g.name}</span>
-                            <span className="flex items-center gap-2 text-muted-foreground/50 text-xs">
-                              {g.participant_count || "?"} membros
-                              {importingGroup === g.id ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              ) : (
-                                <Users className="h-3.5 w-3.5" />
-                              )}
-                            </span>
-                          </Button>
-                        ))}
-                        {!groups?.length && (
-                          <p className="text-xs text-muted-foreground text-center py-4">Nenhum grupo monitorado</p>
+                      <p className="text-xs text-muted-foreground">Todos os grupos da instância. Busque e selecione para importar.</p>
+                      <Input
+                        placeholder="Buscar grupo..."
+                        value={groupSearch}
+                        onChange={(e) => setGroupSearch(e.target.value)}
+                        className="bg-muted/30 border-border/50 text-sm"
+                      />
+                      <div className="space-y-1.5 max-h-[350px] overflow-y-auto">
+                        {loadingGroups ? (
+                          <div className="flex items-center justify-center py-8">
+                            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                          </div>
+                        ) : (
+                          <>
+                            {allGroups
+                              .filter((g) => !groupSearch || g.name?.toLowerCase().includes(groupSearch.toLowerCase()))
+                              .map((g: any) => (
+                                <Button
+                                  key={g.jid}
+                                  variant="outline"
+                                  className="w-full justify-between border-border/30 hover:border-primary/30 hover:bg-primary/5 text-sm"
+                                  disabled={importingGroup === g.jid}
+                                  onClick={() => importGroupMembers(g.jid, g.name)}
+                                >
+                                  <span className="truncate text-left">{g.name}</span>
+                                  <span className="flex items-center gap-2 text-muted-foreground/50 text-xs shrink-0">
+                                    {g.size || "?"} membros
+                                    {importingGroup === g.jid ? (
+                                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    ) : (
+                                      <Users className="h-3.5 w-3.5" />
+                                    )}
+                                  </span>
+                                </Button>
+                              ))}
+                            {!allGroups.length && !loadingGroups && (
+                              <p className="text-xs text-muted-foreground text-center py-4">Nenhum grupo encontrado</p>
+                            )}
+                          </>
                         )}
                       </div>
                     </DialogContent>

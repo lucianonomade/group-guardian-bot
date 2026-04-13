@@ -1,78 +1,61 @@
 
 
-## Plano: Automação, Analytics e Resumo Diário de Grupo
+# Backup e Restauração de Configurações de Grupo
 
-### 1. Comandos de Automação no WhatsApp
+## Visão geral
 
-**Novos comandos no webhook (`whatsguard-webhook`):**
-- `!menu` — Envia lista de todos os comandos disponíveis ao grupo
-- `!regras` — Envia as regras do grupo (configuráveis pelo painel)
-- `!info` — Mostra estatísticas rápidas do grupo (total membros, avisos ativos, bans)
+Criar uma funcionalidade que permite exportar todas as configurações de um grupo (regras, palavras bloqueadas, whitelist, antiflood) como um "template de backup" salvo no banco, e depois aplicar esse template a outros grupos com um clique.
 
-**Configuração no painel:** Adicionar campo "Regras do grupo" na página de Grupos (ou nos detalhes do grupo) para que o admin defina o texto que o `!regras` envia.
+## Estrutura
 
-**Banco de dados:** Adicionar coluna `rules_text` na tabela `groups` para armazenar as regras.
+### 1. Banco de dados — Nova tabela `group_backups`
 
----
+```sql
+CREATE TABLE group_backups (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  name text NOT NULL,
+  source_group_name text,
+  rules_text text,
+  blocked_words jsonb DEFAULT '[]',
+  whitelist_entries jsonb DEFAULT '[]',
+  antiflood_settings jsonb,
+  created_at timestamptz DEFAULT now()
+);
+-- RLS: user_id = auth.uid() para SELECT, INSERT, DELETE
+```
 
-### 2. Resumo Diário do Grupo (com IA)
+Os dados são armazenados como JSON snapshot no momento do backup — independente do grupo original.
 
-**Nova Edge Function (`daily-summary`):**
-- Agendada via `pg_cron` para rodar uma vez por dia (ex: 22h)
-- Para cada grupo monitorado, busca os `action_logs` do dia (avisos, bans, mensagens deletadas)
-- Envia o resumo para a Lovable AI Gateway (Gemini Flash) pedindo um resumo formatado em português
-- Envia o resumo como mensagem no grupo via Evolution API
+### 2. Nova página `src/pages/BackupPage.tsx`
 
-**Nova tabela `daily_summaries`:**
-- `id`, `group_id`, `user_id`, `summary_text`, `date`, `members_active` (JSON), `created_at`
+Duas seções principais:
 
-**UI no Dashboard:** Card mostrando o último resumo de cada grupo, com opção de ver histórico.
+- **Criar Backup**: Selecionar um grupo existente → busca regras, palavras bloqueadas, whitelist e antiflood daquele grupo → salva como template com um nome personalizado.
+- **Lista de Backups**: Mostra os templates salvos com botão "Restaurar" que abre um seletor de grupo(s) destino.
 
----
+**Restauração**: Ao aplicar um backup a um grupo, o sistema:
+1. Atualiza `groups.rules_text` e `groups.welcome_message`
+2. Insere palavras bloqueadas (evitando duplicatas)
+3. Insere entradas de whitelist (evitando duplicatas)
+4. Cria/atualiza `antiflood_settings` para o grupo
 
-### 3. Analytics e Relatórios no Dashboard
+### 3. Navegação
 
-**Melhorias na página Index (Dashboard):**
-- **Ranking de membros mais ativos:** Baseado na contagem de `action_logs` por participante (quem mais recebeu avisos, quem mais foi moderado)
-- **Gráfico de crescimento:** Evolução de membros por grupo ao longo do tempo (requer tracking de `participant_count` com histórico)
-- **Gráfico de moderação:** Avisos vs Bans por semana/mês
+- Adicionar item "Backup" com ícone `Archive` na sidebar do `DashboardLayout.tsx`
+- Registrar rota `/backup` no `App.tsx` como rota protegida
 
-**Nova tabela `group_snapshots`:**
-- `id`, `group_id`, `user_id`, `participant_count`, `snapshot_date`, `created_at`
-- Populada automaticamente pela função `daily-summary` ou pelo sync de grupos
+### 4. Botão rápido na página de Grupos
 
-**Nova página `Analytics` (opcional):** Página dedicada com gráficos mais detalhados, filtros por grupo e período.
+Na tabela de grupos (`Groups.tsx`), adicionar um botão de ação "Exportar Config" por grupo, que cria o backup diretamente com um clique.
 
----
-
-### 4. Mensagens Recorrentes (Agendamento)
-
-**Extensão do Broadcast:**
-- Adicionar opção de "recorrência" (diário, semanal) nos broadcasts
-- Novo campo `recurrence` na tabela `broadcasts` (null = envio único, 'daily', 'weekly')
-- O `broadcast-scheduler` já existente passa a verificar e re-agendar broadcasts recorrentes
-
----
-
-### Arquivos a criar/editar
+## Arquivos a criar/editar
 
 | Arquivo | Ação |
 |---|---|
-| `supabase/functions/whatsguard-webhook/index.ts` | Adicionar !menu, !regras, !info |
-| `supabase/functions/daily-summary/index.ts` | Nova função de resumo diário com IA |
-| `src/pages/Index.tsx` | Adicionar ranking de membros e gráficos extras |
-| `src/pages/Groups.tsx` | Campo de regras do grupo |
-| `src/pages/Analytics.tsx` | Nova página de analytics (opcional) |
-| `src/App.tsx` | Nova rota /analytics |
-| Migration: `groups` | Adicionar coluna `rules_text` |
-| Migration: `daily_summaries` | Nova tabela |
-| Migration: `group_snapshots` | Nova tabela para histórico |
-| Migration: `broadcasts` | Adicionar coluna `recurrence` |
-| SQL (insert tool): `pg_cron` | Agendar daily-summary |
-
-### Ordem de implementação sugerida
-1. Comandos !menu, !regras, !info (rápido, valor imediato)
-2. Analytics no dashboard (ranking + gráficos)
-3. Resumo diário com IA (mais complexo, maior impacto)
-4. Mensagens recorrentes (extensão natural do broadcast)
+| Migração SQL | Criar tabela `group_backups` com RLS |
+| `src/pages/BackupPage.tsx` | Nova página completa |
+| `src/App.tsx` | Adicionar rota `/backup` |
+| `src/components/DashboardLayout.tsx` | Adicionar link na sidebar |
+| `src/pages/Groups.tsx` | Botão "Exportar Config" por grupo |
 

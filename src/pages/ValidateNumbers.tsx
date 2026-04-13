@@ -68,19 +68,34 @@ export default function ValidateNumbers() {
     setImportingGroup(groupId);
     try {
       const instance = group.instances as any;
+
+      // Use the evolution-manager edge function (same as GroupMembers page)
+      const queryStr = new URLSearchParams({
+        action: "fetch-group-participants",
+        instanceName: instance.name,
+        groupJid: group.group_jid,
+      }).toString();
+
+      const session = await supabase.auth.getSession();
       const res = await fetch(
-        `${instance.api_url}/group/participants/${instance.name}?groupJid=${group.group_jid}`,
-        { headers: { apikey: instance.api_key } }
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/evolution-manager?${queryStr}`,
+        {
+          headers: {
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${session.data.session?.access_token}`,
+          },
+        }
       );
-      const data = await res.json();
-      const participants = data?.participants || data || [];
+      const result = await res.json();
+      const participants = result?.participants || [];
 
       const numbers = participants
         .map((p: any) => {
-          const jid = p.id || p.jid || p.phoneNumber || "";
-          return jid.replace("@s.whatsapp.net", "").replace(/\D/g, "");
+          const jid = p.jid || p.id || "";
+          if (!jid.includes("@s.whatsapp.net")) return "";
+          return jid.replace("@s.whatsapp.net", "");
         })
-        .filter((n: string) => n.length >= 10);
+        .filter((n: string) => n.length >= 10 && n.length <= 15);
 
       if (!numbers.length) {
         toast.info("Nenhum membro encontrado neste grupo");

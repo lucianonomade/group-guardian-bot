@@ -37,7 +37,7 @@ export default function Login() {
       password,
       options: {
         data: { display_name: name },
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: `${window.location.origin}/dashboard`,
       },
     });
     if (error) {

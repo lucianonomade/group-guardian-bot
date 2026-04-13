@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -90,6 +90,33 @@ export default function WarmupPage() {
     },
     enabled: !!selectedTaskId && logsOpen,
   });
+
+  // Realtime: listen for warmup task updates (completion notifications)
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`warmup-realtime-${user.id}`)
+      .on(
+        "postgres_changes" as any,
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "warmup_tasks",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload: any) => {
+          if (payload.new?.status === "completed" && payload.old?.status !== "completed") {
+            toast.success(`🎉 Maturação do número ${payload.new.phone_number} concluída!`, {
+              duration: 8000,
+            });
+          }
+          queryClient.invalidateQueries({ queryKey: ["warmup-tasks"] });
+        }
+      )
+      .subscribe();
+
+    return () => { channel.unsubscribe(); };
+  }, [user, queryClient]);
 
   const createMutation = useMutation({
     mutationFn: async () => {

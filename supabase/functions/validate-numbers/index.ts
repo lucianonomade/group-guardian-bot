@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
       .from("instances")
       .select("*")
       .eq("id", instanceId)
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .single();
 
     if (instErr || !instance) {

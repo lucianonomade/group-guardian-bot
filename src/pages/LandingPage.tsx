@@ -28,6 +28,7 @@ const plans = [
     period: "/mês",
     description: "Acesso completo a todas as funcionalidades",
     trial: "3 dias grátis",
+    features: [
       "Instâncias ilimitadas",
       "Grupos ilimitados",
       "Moderação automática 24/7",

@@ -69,6 +69,7 @@ export default function CheckoutPage() {
           customer_name: customerName,
           customer_email: user.email,
           customer_document: customerDocument.replace(/\D/g, ""),
+          customer_phone: customerPhone.replace(/\D/g, ""),
         },
       });
 

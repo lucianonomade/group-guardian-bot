@@ -45,6 +45,8 @@ export default function WarmupPage() {
   const [targetNumbers, setTargetNumbers] = useState("");
   const [totalDays, setTotalDays] = useState(7);
   const [customPlan, setCustomPlan] = useState(DEFAULT_PLAN);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [logsOpen, setLogsOpen] = useState(false);
 
   const { data: instances } = useQuery({
     queryKey: ["instances", user?.id],

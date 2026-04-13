@@ -503,6 +503,68 @@ export type Database = {
         }
         Relationships: []
       }
+      warmup_tasks: {
+        Row: {
+          created_at: string
+          current_day: number
+          id: string
+          instance_id: string
+          last_message_at: string | null
+          max_messages_today: number
+          messages_today: number
+          phone_number: string
+          schedule_plan: Json
+          started_at: string | null
+          status: string
+          target_numbers: string[]
+          total_days: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_day?: number
+          id?: string
+          instance_id: string
+          last_message_at?: string | null
+          max_messages_today?: number
+          messages_today?: number
+          phone_number: string
+          schedule_plan?: Json
+          started_at?: string | null
+          status?: string
+          target_numbers?: string[]
+          total_days?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_day?: number
+          id?: string
+          instance_id?: string
+          last_message_at?: string | null
+          max_messages_today?: number
+          messages_today?: number
+          phone_number?: string
+          schedule_plan?: Json
+          started_at?: string | null
+          status?: string
+          target_numbers?: string[]
+          total_days?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warmup_tasks_instance_id_fkey"
+            columns: ["instance_id"]
+            isOneToOne: false
+            referencedRelation: "instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       warnings: {
         Row: {
           created_at: string

@@ -9,7 +9,7 @@ import {
   Shield, LayoutDashboard, Users, AlertTriangle, Ban,
   MessageSquareOff, ShieldCheck, Settings, LogOut, Menu, X,
   Megaphone, ChevronRight, BarChart3, Radar, BookOpen, Phone, CreditCard, ShieldAlert,
-  Search, User
+  Search, User, Flame
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -29,6 +29,7 @@ const navItems = [
   { href: "/blocked-words", label: "Palavras Bloqueadas", icon: MessageSquareOff },
   { href: "/whitelist", label: "Whitelist", icon: ShieldCheck },
   { href: "/validate-numbers", label: "Validar Números", icon: Phone },
+  { href: "/warmup", label: "Maturador", icon: Flame },
   { href: "/subscription", label: "Assinatura", icon: CreditCard },
   { href: "/tutorial", label: "Tutorial", icon: BookOpen },
   { href: "/settings", label: "Configurações", icon: Settings },

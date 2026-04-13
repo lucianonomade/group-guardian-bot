@@ -5,10 +5,12 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { BarChart3, TrendingUp, Users, Calendar, Trophy, AlertTriangle, Ban, FileText } from "lucide-react";
+import { BarChart3, TrendingUp, Users, Calendar, Trophy, AlertTriangle, Ban, FileText, Loader2, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, Area, AreaChart } from "recharts";
+import { toast } from "sonner";
 
 interface GroupOption {
   id: string;

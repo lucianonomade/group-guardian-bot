@@ -60,11 +60,6 @@ export default function GroupFinder() {
 
     setSearching(true);
     try {
-      const { data, error } = await supabase.functions.invoke("group-finder", {
-        body: { theme, instanceId },
-        headers: { "Content-Type": "application/json" },
-      });
-      // Fix: pass action via query params
       const queryStr = new URLSearchParams({ action: "search" }).toString();
       const res = await supabase.functions.invoke(`group-finder?${queryStr}`, {
         method: "POST" as any,

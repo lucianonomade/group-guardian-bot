@@ -16,6 +16,7 @@ import BlockedWords from "./pages/BlockedWords";
 import SettingsPage from "./pages/SettingsPage";
 import Whitelist from "./pages/Whitelist";
 import BroadcastPage from "./pages/BroadcastPage";
+import GroupFinder from "./pages/GroupFinder";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/bans" element={<ProtectedRoute><Bans /></ProtectedRoute>} />
             <Route path="/blocked-words" element={<ProtectedRoute><BlockedWords /></ProtectedRoute>} />
             <Route path="/whitelist" element={<ProtectedRoute><Whitelist /></ProtectedRoute>} />
+            <Route path="/group-finder" element={<ProtectedRoute><GroupFinder /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

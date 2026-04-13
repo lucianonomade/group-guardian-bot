@@ -10,10 +10,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Phone, CheckCircle2, XCircle, Loader2, Copy, Download } from "lucide-react";
+import { Phone, CheckCircle2, XCircle, Loader2, Copy, Download, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import { pageHeader, fadeUpItem } from "@/lib/animations";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface ValidationResult {
   number: string;

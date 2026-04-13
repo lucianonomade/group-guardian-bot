@@ -162,8 +162,8 @@ export default function ValidateNumbers() {
       return;
     }
 
-    if (lines.length > 500) {
-      toast.error("Máximo de 500 números por vez");
+    if (lines.length > 2000) {
+      toast.error("Máximo de 2000 números por vez");
       return;
     }
 
@@ -229,7 +229,7 @@ export default function ValidateNumbers() {
             <CardHeader className="border-b border-border/30 pb-4">
               <CardTitle className="text-base">Verificar Números</CardTitle>
               <CardDescription className="text-xs">
-                Insira os números separados por linha, vírgula ou ponto-e-vírgula. Máximo 500.
+                Insira os números separados por linha, vírgula ou ponto-e-vírgula. Máximo 2000.
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-4 space-y-4">

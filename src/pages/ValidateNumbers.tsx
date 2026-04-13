@@ -92,14 +92,12 @@ export default function ValidateNumbers() {
     if (!instances?.length) return;
     const inst = instances[0];
 
-    setImportingGroup(groupId);
+    setImportingGroup(groupJid);
     try {
-      const instance = group.instances as any;
-
       // Call Evolution API directly to get participant phone numbers
       const res = await fetch(
-        `${instance.api_url}/group/participants/${instance.name}?groupJid=${group.group_jid}`,
-        { headers: { apikey: instance.api_key } }
+        `${inst.api_url}/group/participants/${inst.name}?groupJid=${groupJid}`,
+        { headers: { apikey: inst.api_key } }
       );
       const data = await res.json();
       

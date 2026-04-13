@@ -503,6 +503,50 @@ export type Database = {
         }
         Relationships: []
       }
+      warmup_logs: {
+        Row: {
+          created_at: string
+          day_number: number
+          error_details: string | null
+          id: string
+          message_text: string
+          status: string
+          target_number: string
+          user_id: string
+          warmup_task_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_number?: number
+          error_details?: string | null
+          id?: string
+          message_text: string
+          status?: string
+          target_number: string
+          user_id: string
+          warmup_task_id: string
+        }
+        Update: {
+          created_at?: string
+          day_number?: number
+          error_details?: string | null
+          id?: string
+          message_text?: string
+          status?: string
+          target_number?: string
+          user_id?: string
+          warmup_task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warmup_logs_warmup_task_id_fkey"
+            columns: ["warmup_task_id"]
+            isOneToOne: false
+            referencedRelation: "warmup_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       warmup_tasks: {
         Row: {
           created_at: string

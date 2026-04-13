@@ -21,6 +21,24 @@ export default function CheckoutPage() {
   const [customerPhone, setCustomerPhone] = useState("");
   const [copied, setCopied] = useState(false);
 
+  const { data: expiredTrial } = useQuery({
+    queryKey: ["expired-trial", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("user_id", user!.id)
+        .eq("plan_name", "WhatsGuard Pro - Trial")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const isTrialExpired = expiredTrial && expiredTrial.expires_at && new Date(expiredTrial.expires_at) < new Date();
+
   if (!user) return <Navigate to="/login" replace />;
 
   const handleCreatePix = async () => {

@@ -132,8 +132,28 @@ Deno.serve(async (req) => {
             messages_today: task.messages_today + 1,
             last_message_at: new Date().toISOString(),
           }).eq("id", task.id);
+          // Log success
+          await supabase.from("warmup_logs").insert({
+            user_id: task.user_id,
+            warmup_task_id: task.id,
+            target_number: targetNumber,
+            message_text: message,
+            status: "sent",
+            day_number: task.current_day,
+          });
         } else {
-          console.error(`Failed to send to ${targetNumber}:`, await res.text());
+          const errText = await res.text();
+          console.error(`Failed to send to ${targetNumber}:`, errText);
+          // Log error
+          await supabase.from("warmup_logs").insert({
+            user_id: task.user_id,
+            warmup_task_id: task.id,
+            target_number: targetNumber,
+            message_text: message,
+            status: "error",
+            error_details: errText.slice(0, 500),
+            day_number: task.current_day,
+          });
         }
       } catch (err) {
         console.error(`Error sending message for task ${task.id}:`, err);

@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Flame, Play, Pause, Trash2, Plus, Loader2, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
+import { Flame, Play, Pause, Trash2, Plus, Loader2, CheckCircle2, Clock, AlertTriangle, History, MessageSquare, XCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
 import { pageHeader } from "@/lib/animations";
@@ -45,6 +45,8 @@ export default function WarmupPage() {
   const [targetNumbers, setTargetNumbers] = useState("");
   const [totalDays, setTotalDays] = useState(7);
   const [customPlan, setCustomPlan] = useState(DEFAULT_PLAN);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [logsOpen, setLogsOpen] = useState(false);
 
   const { data: instances } = useQuery({
     queryKey: ["instances", user?.id],
@@ -72,6 +74,21 @@ export default function WarmupPage() {
       return data;
     },
     enabled: !!user,
+  });
+
+  const { data: logs, isLoading: logsLoading } = useQuery({
+    queryKey: ["warmup-logs", selectedTaskId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("warmup_logs")
+        .select("*")
+        .eq("warmup_task_id", selectedTaskId!)
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedTaskId && logsOpen,
   });
 
   const createMutation = useMutation({
@@ -337,6 +354,14 @@ export default function WarmupPage() {
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-1">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8"
+                                  onClick={() => { setSelectedTaskId(task.id); setLogsOpen(true); }}
+                                >
+                                  <History className="h-4 w-4 text-muted-foreground" />
+                                </Button>
                                 {task.status !== "completed" && (
                                   <Button
                                     size="icon"
@@ -400,6 +425,63 @@ export default function WarmupPage() {
           </Card>
         </motion.div>
       </motion.div>
+
+      {/* Logs Dialog */}
+      <Dialog open={logsOpen} onOpenChange={setLogsOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5 text-primary" />
+              Histórico de Mensagens
+            </DialogTitle>
+          </DialogHeader>
+          {logsLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : !logs?.length ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <MessageSquare className="h-10 w-10 mx-auto mb-2 opacity-30" />
+              <p className="text-sm">Nenhuma mensagem enviada ainda</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex gap-3 mb-4 text-sm">
+                <Badge variant="outline" className="gap-1">
+                  <CheckCircle2 className="h-3 w-3 text-green-400" />
+                  {logs.filter(l => l.status === "sent").length} enviadas
+                </Badge>
+                <Badge variant="outline" className="gap-1">
+                  <XCircle className="h-3 w-3 text-destructive" />
+                  {logs.filter(l => l.status === "error").length} erros
+                </Badge>
+              </div>
+              {logs.map((log: any) => (
+                <div key={log.id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border/30">
+                  {log.status === "sent" ? (
+                    <CheckCircle2 className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                  ) : (
+                    <XCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-mono text-xs text-muted-foreground">{log.target_number}</span>
+                      <Badge variant="outline" className="text-[10px] h-5">Dia {log.day_number}</Badge>
+                    </div>
+                    <p className="text-sm mt-1 truncate">{log.message_text}</p>
+                    {log.error_details && (
+                      <p className="text-xs text-destructive mt-1 truncate">{log.error_details}</p>
+                    )}
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {new Date(log.created_at).toLocaleString("pt-BR")}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }

@@ -40,30 +40,7 @@ export function NotificationsDropdown() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
 
-  const fetchNotificationsRef = useRef(fetchNotifications);
-  fetchNotificationsRef.current = fetchNotifications;
-
-  useEffect(() => {
-    if (!user) return;
-    
-    fetchNotificationsRef.current();
-
-    const channelId = crypto.randomUUID();
-    const channel = supabase
-      .channel(channelId)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "action_logs", filter: `user_id=eq.${user.id}` },
-        () => { fetchNotificationsRef.current(); }
-      )
-      .subscribe();
-
-    return () => {
-      channel.unsubscribe();
-    };
-  }, [user]);
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     const { data } = await supabase
       .from("action_logs")
       .select("id, action_type, participant_name, details, created_at")
@@ -72,7 +49,26 @@ export function NotificationsDropdown() {
     const items = (data as Notification[]) ?? [];
     setNotifications(items);
     setUnreadCount(Math.min(items.length, 9));
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    
+    fetchNotifications();
+
+    const channel = supabase
+      .channel(crypto.randomUUID())
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "action_logs", filter: `user_id=eq.${user.id}` },
+        () => { fetchNotifications(); }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [user, fetchNotifications]);
 
   const markAllRead = () => {
     setUnreadCount(0);

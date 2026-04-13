@@ -60,26 +60,40 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ error: taskError.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
       }
 
-      // Search for WhatsApp group links using Google
-      const searchQuery = `site:chat.whatsapp.com "${theme.trim()}" grupo whatsapp`
+      // Search for WhatsApp group links on aggregator sites
       const links: string[] = []
+      const linkRegex = /https?:\/\/chat\.whatsapp\.com\/[A-Za-z0-9]{10,}/g
+      const encodedTheme = encodeURIComponent(theme.trim())
 
-      try {
-        // Use a simple search approach - fetch Google search results
-        const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}&num=20`
-        const searchRes = await fetch(searchUrl, {
-          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
-        })
-        const html = await searchRes.text()
+      // Try multiple aggregator/search sources
+      const searchUrls = [
+        `https://www.google.com/search?q=${encodeURIComponent(`"chat.whatsapp.com" ${theme.trim()} grupo`)}&num=30`,
+        `https://www.bing.com/search?q=${encodeURIComponent(`"chat.whatsapp.com" ${theme.trim()} grupo whatsapp`)}&count=30`,
+        `https://duckduckgo.com/html/?q=${encodeURIComponent(`"chat.whatsapp.com" ${theme.trim()} grupo`)}`,
+      ]
 
-        // Extract chat.whatsapp.com links from results
-        const linkRegex = /https?:\/\/chat\.whatsapp\.com\/[A-Za-z0-9]{10,}/g
-        const matches = html.match(linkRegex) || []
-        const uniqueLinks = [...new Set(matches)]
-        links.push(...uniqueLinks.slice(0, 20))
-      } catch (e) {
-        console.error('Search error:', e)
+      for (const searchUrl of searchUrls) {
+        try {
+          const searchRes = await fetch(searchUrl, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+              'Accept': 'text/html,application/xhtml+xml',
+              'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+            },
+            redirect: 'follow',
+          })
+          const html = await searchRes.text()
+          const matches = html.match(linkRegex) || []
+          for (const m of matches) {
+            if (!links.includes(m)) links.push(m)
+          }
+          if (links.length >= 15) break
+        } catch (e) {
+          console.error('Search source error:', e)
+        }
       }
+      // Limit to 20 unique links
+      links.splice(20)
 
       // Update task with found links
       await serviceSupabase.from('group_finder_tasks').update({

@@ -1,11 +1,13 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   Shield, LayoutDashboard, Users, AlertTriangle, Ban,
   MessageSquareOff, ShieldCheck, Settings, LogOut, Menu, X,
-  Megaphone, ChevronRight, BarChart3, Radar, BookOpen, Phone, CreditCard
+  Megaphone, ChevronRight, BarChart3, Radar, BookOpen, Phone, CreditCard, ShieldAlert
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -28,9 +30,27 @@ const navItems = [
 ];
 
 export function DashboardLayout({ children }: { children: ReactNode }) {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const { data: isAdmin } = useQuery({
+    queryKey: ["is-admin", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user!.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      return !!data;
+    },
+    enabled: !!user,
+  });
+
+  const allNavItems = isAdmin
+    ? [...navItems, { href: "/admin", label: "Admin", icon: ShieldAlert }]
+    : navItems;
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -82,7 +102,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
           <p className="mb-3 px-3 text-[9px] font-bold uppercase tracking-[0.25em] text-sidebar-foreground/25">
             Navegação
           </p>
-          {navItems.map(item => {
+          {allNavItems.map(item => {
             const isActive = location.pathname === item.href;
             return (
               <Link

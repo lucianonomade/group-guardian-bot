@@ -22,6 +22,7 @@ import Tutorial from "./pages/Tutorial";
 import ValidateNumbers from "./pages/ValidateNumbers";
 import NotFound from "./pages/NotFound";
 import CheckoutPage from "./pages/CheckoutPage";
+import SubscriptionPage from "./pages/SubscriptionPage";
 
 const queryClient = new QueryClient();
 

@@ -440,6 +440,51 @@ export type Database = {
         }
         Relationships: []
       }
+      subscriptions: {
+        Row: {
+          amount: number
+          created_at: string
+          expires_at: string | null
+          id: string
+          paid_at: string | null
+          pepper_transaction_id: string | null
+          pix_code: string | null
+          pix_qrcode: string | null
+          plan_name: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          paid_at?: string | null
+          pepper_transaction_id?: string | null
+          pix_code?: string | null
+          pix_qrcode?: string | null
+          plan_name?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          paid_at?: string | null
+          pepper_transaction_id?: string | null
+          pix_code?: string | null
+          pix_qrcode?: string | null
+          plan_name?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       warnings: {
         Row: {
           created_at: string

@@ -221,13 +221,13 @@ export default function LandingPage() {
                       </li>
                     ))}
                   </ul>
-                  <Link to="/login">
+                  <Link to="/checkout">
                     <Button className={`w-full rounded-xl h-11 font-bold text-sm ${
                       plan.highlight
                         ? "bg-gradient-to-r from-primary via-teal-500 to-cyan-500 text-background shadow-lg shadow-primary/25 hover:opacity-90"
                         : "bg-muted/40 hover:bg-muted/60 text-foreground"
                     }`}>
-                      Começar Agora
+                      Assinar Agora
                     </Button>
                   </Link>
                 </CardContent>

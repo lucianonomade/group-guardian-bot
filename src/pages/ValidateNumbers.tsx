@@ -10,10 +10,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Phone, CheckCircle2, XCircle, Loader2, Copy, Download } from "lucide-react";
+import { Phone, CheckCircle2, XCircle, Loader2, Copy, Download, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import { pageHeader, fadeUpItem } from "@/lib/animations";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface ValidationResult {
   number: string;
@@ -26,6 +27,8 @@ export default function ValidateNumbers() {
   const [instanceId, setInstanceId] = useState("");
   const [numbersText, setNumbersText] = useState("");
   const [loading, setLoading] = useState(false);
+  const [importingGroup, setImportingGroup] = useState<string | null>(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [results, setResults] = useState<ValidationResult[] | null>(null);
   const [stats, setStats] = useState<{ total: number; valid: number; invalid: number } | null>(null);
 
@@ -42,6 +45,60 @@ export default function ValidateNumbers() {
     },
     enabled: !!user,
   });
+
+  const { data: groups } = useQuery({
+    queryKey: ["groups-with-instances", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("groups")
+        .select("*, instances(*)")
+        .eq("user_id", user!.id)
+        .eq("is_monitored", true)
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const importGroupMembers = async (groupId: string) => {
+    const group = groups?.find((g: any) => g.id === groupId);
+    if (!group || !group.instances) return;
+
+    setImportingGroup(groupId);
+    try {
+      const instance = group.instances as any;
+      const res = await fetch(
+        `${instance.api_url}/group/participants/${instance.name}?groupJid=${group.group_jid}`,
+        { headers: { apikey: instance.api_key } }
+      );
+      const data = await res.json();
+      const participants = data?.participants || data || [];
+
+      const numbers = participants
+        .map((p: any) => {
+          const jid = p.id || p.jid || p.phoneNumber || "";
+          return jid.replace("@s.whatsapp.net", "").replace(/\D/g, "");
+        })
+        .filter((n: string) => n.length >= 10);
+
+      if (!numbers.length) {
+        toast.info("Nenhum membro encontrado neste grupo");
+        return;
+      }
+
+      const existing = numbersText.trim();
+      const newText = existing ? `${existing}\n${numbers.join("\n")}` : numbers.join("\n");
+      setNumbersText(newText);
+      setImportDialogOpen(false);
+      toast.success(`${numbers.length} número(s) importado(s) do grupo "${group.name}"`);
+    } catch (e) {
+      console.error("Import error:", e);
+      toast.error("Erro ao importar membros do grupo");
+    } finally {
+      setImportingGroup(null);
+    }
+  };
 
   const handleValidate = async () => {
     if (!instanceId) {
@@ -145,7 +202,46 @@ export default function ValidateNumbers() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Números</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-muted-foreground">Números</Label>
+                  <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-xs border-border/50 h-7">
+                        <Users className="h-3 w-3 mr-1" /> Importar do Grupo
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="glass-card border-border/50">
+                      <DialogHeader>
+                        <DialogTitle className="text-base">Importar Membros do Grupo</DialogTitle>
+                      </DialogHeader>
+                      <p className="text-xs text-muted-foreground">Selecione um grupo para importar os números dos membros.</p>
+                      <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                        {groups?.map((g: any) => (
+                          <Button
+                            key={g.id}
+                            variant="outline"
+                            className="w-full justify-between border-border/30 hover:border-primary/30 hover:bg-primary/5 text-sm"
+                            disabled={importingGroup === g.id}
+                            onClick={() => importGroupMembers(g.id)}
+                          >
+                            <span className="truncate">{g.name}</span>
+                            <span className="flex items-center gap-2 text-muted-foreground/50 text-xs">
+                              {g.participant_count || "?"} membros
+                              {importingGroup === g.id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Users className="h-3.5 w-3.5" />
+                              )}
+                            </span>
+                          </Button>
+                        ))}
+                        {!groups?.length && (
+                          <p className="text-xs text-muted-foreground text-center py-4">Nenhum grupo monitorado</p>
+                        )}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
                 <Textarea
                   placeholder={"5511999999999\n5521988888888\n5531977777777"}
                   value={numbersText}

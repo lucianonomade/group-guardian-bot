@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
 
     // ── CREATE PIX ──
     if (action === "create_pix") {
-      const { offer_hash, customer_name, customer_email, customer_document } = body;
+      const { offer_hash, customer_name, customer_email, customer_document, customer_phone } = body;
 
       if (!offer_hash) {
         return new Response(JSON.stringify({ error: "offer_hash é obrigatório" }), {
@@ -112,11 +112,19 @@ Deno.serve(async (req) => {
           api_token: pepperToken,
           amount: 10000,
           payment_method: "pix",
-          cart: [{ offer_hash, price: 10000 }],
+          installments: 1,
+          cart: [{
+            offer_hash,
+            price: 10000,
+            quantity: 1,
+            operation_type: 1,
+            title: "WhatsGuard Pro - Plano Mensal",
+          }],
           customer: {
             name: customer_name || "Cliente",
             email: customer_email || user.email,
             document: customer_document || "",
+            phone_number: customer_phone || "11999999999",
           },
         }),
       });

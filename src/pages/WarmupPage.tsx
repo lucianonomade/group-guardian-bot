@@ -288,6 +288,61 @@ export default function WarmupPage() {
                   <p className="text-xs text-muted-foreground mt-1">Números reais que receberão as mensagens de aquecimento</p>
                 </div>
                 <div>
+                  <Label>Mensagens Personalizadas (1 por linha)</Label>
+                  <Textarea
+                    placeholder="Oi, tudo bem?&#10;Bom dia! Como vai?&#10;E aí, beleza?&#10;(deixe vazio para usar mensagens padrão)"
+                    value={customMessages}
+                    onChange={e => setCustomMessages(e.target.value)}
+                    rows={4}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {customMessages.split("\n").filter(m => m.trim()).length || 0} mensagens • Deixe vazio para usar as padrão
+                  </p>
+                </div>
+                <div>
+                  <Label>Imagens Pré-programadas</Label>
+                  <div className="mt-2 space-y-2">
+                    <label className="flex items-center gap-2 cursor-pointer p-3 rounded-lg border border-dashed border-border/50 hover:border-primary/50 transition-colors">
+                      <ImagePlus className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Clique para adicionar imagens</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={e => {
+                          if (e.target.files) {
+                            setImageFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+                          }
+                        }}
+                      />
+                    </label>
+                    {imageFiles.length > 0 && (
+                      <div className="grid grid-cols-4 gap-2">
+                        {imageFiles.map((file, i) => (
+                          <div key={i} className="relative group">
+                            <img
+                              src={URL.createObjectURL(file)}
+                              alt={file.name}
+                              className="w-full h-16 object-cover rounded-lg border border-border/30"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setImageFiles(prev => prev.filter((_, idx) => idx !== i))}
+                              className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      30% de chance de enviar imagem ao invés de texto • {imageFiles.length} imagem(ns)
+                    </p>
+                  </div>
+                </div>
+                <div>
                   <Label>Duração (dias)</Label>
                   <Select value={String(totalDays)} onValueChange={v => handleTotalDaysChange(Number(v))}>
                     <SelectTrigger>

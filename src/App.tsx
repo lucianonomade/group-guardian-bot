@@ -23,6 +23,7 @@ import ValidateNumbers from "./pages/ValidateNumbers";
 import NotFound from "./pages/NotFound";
 import CheckoutPage from "./pages/CheckoutPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
+import AdminPage from "./pages/AdminPage";
 
 const queryClient = new QueryClient();
 

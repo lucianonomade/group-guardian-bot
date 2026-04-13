@@ -132,23 +132,39 @@ Deno.serve(async (req) => {
       const txData = await txRes.json();
       console.log("PIX transaction response:", JSON.stringify(txData));
 
-      if (txData.success !== false && txData.data) {
-        // Save subscription as pending
+      // Pepper returns transaction data directly or wrapped in .data
+      const tx = txData.data || txData;
+      const hasTransaction = tx.transaction || tx.hash || tx.event === "transaction";
+
+      if (hasTransaction) {
         const serviceClient = createClient(
           Deno.env.get("SUPABASE_URL")!,
           Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
         );
 
+        const pixCode = tx.pix?.pix_qr_code || tx.pix_code || "";
+        const pixQrcode = tx.pix?.qr_code_base64
+          ? `data:image/png;base64,${tx.pix.qr_code_base64}`
+          : "";
+
         await serviceClient.from("subscriptions").insert({
           user_id: user.id,
           status: "pending",
-          pepper_transaction_id: txData.data.transaction_hash || txData.data.hash || txData.data.id || "",
-          pix_code: txData.data.pix_code || txData.data.pix?.code || "",
-          pix_qrcode: txData.data.pix_qrcode || txData.data.pix?.qrcode || "",
+          pepper_transaction_id: tx.transaction || tx.hash || "",
+          pix_code: pixCode,
+          pix_qrcode: pixQrcode,
           amount: 10000,
         });
 
-        return new Response(JSON.stringify({ success: true, data: txData.data }), {
+        return new Response(JSON.stringify({
+          success: true,
+          data: {
+            pix_code: pixCode,
+            pix_qrcode: pixQrcode,
+            transaction_id: tx.transaction || tx.hash,
+            payment_status: tx.payment_status,
+          }
+        }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }

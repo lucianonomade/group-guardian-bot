@@ -172,10 +172,6 @@ export default function Login() {
           </CardContent>
         </Card>
 
-        <p className="text-center text-[11px] text-muted-foreground/30 font-medium">
-          <Zap className="mr-1 inline h-3 w-3 text-primary/40" />
-          Integrado com Evolution API
-        </p>
       </motion.div>
     </div>
   );

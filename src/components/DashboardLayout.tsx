@@ -9,7 +9,7 @@ import {
   Shield, LayoutDashboard, Users, AlertTriangle, Ban,
   MessageSquareOff, ShieldCheck, Settings, LogOut, Menu, X,
   Megaphone, ChevronRight, BarChart3, Radar, BookOpen, Phone, CreditCard, ShieldAlert,
-  Search, User
+  Search, User, Flame
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";

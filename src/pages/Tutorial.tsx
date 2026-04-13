@@ -4,154 +4,133 @@ import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import { fadeUpItem, pageHeader } from "@/lib/animations";
 import {
-  Settings, Users, MessageSquare, ShieldAlert, Ban, AlertTriangle,
+  Users, MessageSquare, ShieldAlert, Ban, AlertTriangle,
   MessageSquareOff, ShieldCheck, Megaphone, Radar, BarChart3,
-  BookOpen, Zap, ChevronRight, Terminal, Send, Clock
+  BookOpen, Zap, ChevronRight, Terminal, Send
 } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const steps = [
   {
     number: "01",
-    icon: Settings,
-    title: "Conectar a Instância",
-    description: "Configure sua instância da Evolution API para conectar o WhatsGuard ao seu WhatsApp.",
+    icon: Users,
+    title: "Ativar seus Grupos",
+    description: "Escolha quais grupos o bot vai proteger.",
     details: [
-      'Acesse "Configurações" no menu lateral',
-      "Clique em \"Nova Instância\" e preencha os dados:",
-      "• Nome: identificador da instância (ex: meu-bot)",
-      "• URL da API: endereço da sua Evolution API",
-      "• Chave da API: apikey da sua Evolution API",
-      "Clique em Salvar e escaneie o QR Code para conectar",
-      "O status ficará verde quando estiver online",
+      'Clique em "Grupos" no menu lateral',
+      "Seus grupos aparecerão automaticamente na lista",
+      'Ative o botão "Monitorar" nos grupos que deseja proteger',
+      "Pronto! O bot já começa a moderar esses grupos",
     ],
   },
   {
     number: "02",
-    icon: Users,
-    title: "Sincronizar Grupos",
-    description: "Os grupos do WhatsApp são importados automaticamente ao acessar a página de Grupos.",
+    icon: MessageSquareOff,
+    title: "Bloquear Palavras",
+    description: "Defina palavras proibidas que serão apagadas automaticamente.",
     details: [
-      'Acesse "Grupos" no menu lateral',
-      "A sincronização automática inicia ao abrir a página",
-      "Todos os grupos da instância serão listados",
-      'Ative o switch "Monitorar" nos grupos desejados',
-      "Somente grupos monitorados terão moderação ativa",
+      'Clique em "Palavras Bloqueadas" no menu',
+      "Digite a palavra e escolha uma categoria (spam, ofensa, link...)",
+      "Quando alguém enviar essa palavra, a mensagem será apagada",
+      "O membro recebe um aviso automático",
+      "Após 3 avisos, o membro é removido do grupo",
     ],
   },
   {
     number: "03",
-    icon: MessageSquareOff,
-    title: "Configurar Palavras Bloqueadas",
-    description: "Defina palavras e expressões proibidas que serão filtradas automaticamente.",
+    icon: MessageSquare,
+    title: "Mensagem de Boas-vindas",
+    description: "Receba novos membros com uma mensagem automática.",
     details: [
-      'Acesse "Palavras Bloqueadas" no menu lateral',
-      "Adicione palavras por categoria (spam, ofensas, links, etc.)",
-      "Mensagens com essas palavras serão apagadas automaticamente",
-      "O membro receberá um aviso (warning) automático",
-      "Após 3 avisos, o membro é banido do grupo",
+      'Na página "Grupos", clique em "Configurar" na coluna Boas-vindas',
+      "Escreva sua mensagem de boas-vindas",
+      "Use {name} para incluir o nome da pessoa automaticamente",
+      "Use {group} para incluir o nome do grupo",
+      'Exemplo: "Bem-vindo(a), {name}! 👋 Siga as regras do {group}."',
     ],
   },
   {
     number: "04",
-    icon: ShieldCheck,
-    title: "Configurar Whitelist",
-    description: "Membros na whitelist são imunes à moderação automática.",
+    icon: BookOpen,
+    title: "Regras do Grupo",
+    description: "Configure as regras para os membros consultarem a qualquer momento.",
     details: [
-      'Acesse "Whitelist" no menu lateral',
-      "Adicione o JID do membro (número@s.whatsapp.net)",
-      "Opcionalmente, vincule a um grupo específico",
-      "Membros na whitelist podem enviar qualquer mensagem sem restrição",
-      "Admins do grupo já são automaticamente ignorados pela moderação",
+      'Na página "Grupos", clique em "Configurar" na coluna Regras',
+      "Escreva as regras do seu grupo",
+      "Qualquer membro pode digitar !regras no grupo para vê-las",
     ],
   },
   {
     number: "05",
-    icon: MessageSquare,
-    title: "Mensagem de Boas-vindas",
-    description: "Configure uma mensagem automática para novos membros dos grupos.",
+    icon: ShieldAlert,
+    title: "Anti-flood (Anti-spam)",
+    description: "Bloqueie quem manda muitas mensagens seguidas.",
     details: [
-      'Na página "Grupos", clique em "Configurar" na coluna Boas-vindas',
-      "Use {name} para incluir o nome do novo membro",
-      "Use {group} para incluir o nome do grupo",
-      "Exemplo: Bem-vindo(a), {name}! 👋 Leia as regras do {group}.",
-      "A mensagem é enviada automaticamente quando alguém entra",
+      'Na página "Grupos", clique em "Configurar" na coluna Anti-flood',
+      "Escolha quantas mensagens são permitidas (ex: 10)",
+      "Escolha em quantos segundos (ex: 30 segundos)",
+      "Se alguém passar do limite, recebe um aviso automático",
     ],
   },
   {
     number: "06",
-    icon: BookOpen,
-    title: "Regras do Grupo",
-    description: "Defina as regras que serão exibidas com o comando !regras.",
+    icon: ShieldCheck,
+    title: "Whitelist (Membros VIP)",
+    description: "Proteja membros específicos de serem moderados.",
     details: [
-      'Na página "Grupos", clique em "Configurar" na coluna Regras',
-      "Escreva as regras do grupo no campo de texto",
-      "Qualquer membro pode digitar !regras para vê-las",
-      "Mantenha as regras claras e objetivas",
+      'Clique em "Whitelist" no menu',
+      "Adicione os membros que não devem ser moderados",
+      "Eles poderão enviar qualquer mensagem sem restrição",
+      "Administradores do grupo já são protegidos automaticamente",
     ],
   },
   {
     number: "07",
-    icon: ShieldAlert,
-    title: "Anti-flood",
-    description: "Proteja os grupos contra spam de mensagens em sequência.",
+    icon: Megaphone,
+    title: "Enviar Mensagens em Massa",
+    description: "Mande uma mensagem para vários grupos ao mesmo tempo.",
     details: [
-      'Na página "Grupos", clique em "Configurar" na coluna Anti-flood',
-      "Defina o limite de mensagens (ex: 10 mensagens)",
-      "Defina a janela de tempo (ex: 30 segundos)",
-      "Se um membro ultrapassar o limite, receberá um aviso",
-      "Membros da whitelist são imunes ao anti-flood",
+      'Clique em "Divulgação" no menu',
+      "Selecione os grupos de destino",
+      "Escreva sua mensagem (pode incluir imagem)",
+      "Envie agora ou agende para depois",
+      "Pode configurar para repetir todo dia ou toda semana",
     ],
   },
   {
     number: "08",
-    icon: Megaphone,
-    title: "Broadcast / Divulgação",
-    description: "Envie mensagens em massa para múltiplos grupos de uma vez.",
+    icon: Radar,
+    title: "Buscar Novos Grupos",
+    description: "Encontre e entre em grupos públicos automaticamente.",
     details: [
-      'Acesse "Divulgação" no menu lateral',
-      "Selecione a instância e os grupos de destino",
-      "Escreva a mensagem (suporta texto e imagem)",
-      "Escolha envio imediato ou agendado (data/hora futura)",
-      "Configure recorrência diária ou semanal se desejado",
-      "Acompanhe o status de envio na lista de broadcasts",
+      'Clique em "Buscador" no menu',
+      "Digite um tema (ex: vendas, marketing, crypto...)",
+      "O sistema busca grupos públicos relacionados",
+      "Você também pode colar links de convite manualmente",
+      "Selecione os grupos e o bot entra automaticamente",
     ],
   },
   {
     number: "09",
-    icon: Radar,
-    title: "Buscador de Grupos",
-    description: "Encontre e entre em novos grupos automaticamente baseado em temas.",
-    details: [
-      'Acesse "Buscador" no menu lateral',
-      "Digite um tema/palavra-chave para buscar grupos públicos",
-      "Ou cole links de convite manualmente (um por linha)",
-      "O sistema valida cada link automaticamente",
-      "Selecione os grupos válidos e clique em Entrar",
-      "O bot entrará automaticamente nos grupos selecionados",
-    ],
-  },
-  {
-    number: "10",
     icon: BarChart3,
-    title: "Analytics e Relatórios",
-    description: "Acompanhe estatísticas de moderação e atividade dos grupos.",
+    title: "Acompanhar Estatísticas",
+    description: "Veja tudo que acontece nos seus grupos.",
     details: [
-      'Acesse "Analytics" no menu lateral',
-      "Veja estatísticas de avisos, banimentos e ações",
-      "Acompanhe o crescimento dos grupos ao longo do tempo",
-      "O resumo diário com IA é enviado automaticamente no grupo",
+      'Clique em "Analytics" no menu',
+      "Veja quantos avisos e banimentos foram aplicados",
+      "Acompanhe o crescimento dos seus grupos",
+      "Receba um resumo diário automático com IA direto no grupo",
     ],
   },
 ];
 
 const commands = [
-  { cmd: "!menu", desc: "Exibe o menu de comandos disponíveis", access: "Todos" },
-  { cmd: "!regras", desc: "Exibe as regras configuradas do grupo", access: "Todos" },
-  { cmd: "!info", desc: "Mostra informações do grupo e do bot", access: "Todos" },
-  { cmd: "!warn @membro", desc: "Adiciona um aviso a um membro (marque ou responda)", access: "Admins" },
-  { cmd: "!ban @membro", desc: "Bane um membro do grupo (marque ou responda)", access: "Admins" },
-  { cmd: "!unwarn @membro", desc: "Remove o último aviso de um membro", access: "Admins" },
+  { cmd: "!menu", desc: "Mostra os comandos disponíveis", access: "Todos" },
+  { cmd: "!regras", desc: "Mostra as regras do grupo", access: "Todos" },
+  { cmd: "!info", desc: "Mostra informações do grupo", access: "Todos" },
+  { cmd: "!warn", desc: "Dá um aviso a um membro (responda a mensagem dele)", access: "Admins" },
+  { cmd: "!ban", desc: "Remove um membro do grupo (responda a mensagem dele)", access: "Admins" },
+  { cmd: "!unwarn", desc: "Remove o último aviso de um membro", access: "Admins" },
 ];
 
 export default function Tutorial() {
@@ -164,8 +143,8 @@ export default function Tutorial() {
               <BookOpen className="h-5 w-5 text-background" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Tutorial</h1>
-              <p className="text-sm text-muted-foreground">Guia completo para configurar e usar o WhatsGuard</p>
+              <h1 className="text-2xl font-bold tracking-tight">Como Usar</h1>
+              <p className="text-sm text-muted-foreground">Guia passo a passo para configurar o WhatsGuard</p>
             </div>
           </div>
         </motion.div>
@@ -177,9 +156,11 @@ export default function Tutorial() {
               <div className="flex items-start gap-3">
                 <Zap className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                 <div>
-                  <h3 className="font-semibold text-sm mb-1">Início Rápido</h3>
+                  <h3 className="font-semibold text-sm mb-1">⚡ Começando em 2 minutos</h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    Para começar a usar: <span className="text-foreground font-medium">1)</span> Conecte sua instância Evolution API nas Configurações → <span className="text-foreground font-medium">2)</span> Sincronize e ative os grupos → <span className="text-foreground font-medium">3)</span> Adicione palavras bloqueadas. O bot já estará moderando!
+                    <span className="text-foreground font-medium">1)</span> Ative os grupos que quer proteger →{" "}
+                    <span className="text-foreground font-medium">2)</span> Adicione palavras bloqueadas →{" "}
+                    <span className="text-foreground font-medium">3)</span> Pronto! O bot já está moderando automaticamente. 🚀
                   </p>
                 </div>
               </div>
@@ -187,7 +168,7 @@ export default function Tutorial() {
           </Card>
         </motion.div>
 
-        {/* Steps accordion */}
+        {/* Steps */}
         <motion.div variants={fadeUpItem} initial="hidden" animate="visible" transition={{ delay: 0.1 }}>
           <Accordion type="multiple" className="space-y-3">
             {steps.map((step, i) => (
@@ -207,14 +188,8 @@ export default function Tutorial() {
                     <ul className="space-y-2 ml-[52px]">
                       {step.details.map((detail, j) => (
                         <li key={j} className="flex items-start gap-2 text-xs text-muted-foreground">
-                          {detail.startsWith("•") ? (
-                            <span className="ml-3">{detail}</span>
-                          ) : (
-                            <>
-                              <ChevronRight className="h-3 w-3 text-primary/40 mt-0.5 shrink-0" />
-                              <span>{detail}</span>
-                            </>
-                          )}
+                          <ChevronRight className="h-3 w-3 text-primary/40 mt-0.5 shrink-0" />
+                          <span>{detail}</span>
                         </li>
                       ))}
                     </ul>
@@ -225,14 +200,15 @@ export default function Tutorial() {
           </Accordion>
         </motion.div>
 
-        {/* Commands reference */}
+        {/* Commands */}
         <motion.div variants={fadeUpItem} initial="hidden" animate="visible" transition={{ delay: 0.2 }}>
           <Card className="glass-card overflow-hidden">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <Terminal className="h-4 w-4 text-primary" />
-                Comandos do Bot
+                Comandos no WhatsApp
               </CardTitle>
+              <p className="text-xs text-muted-foreground">Digite esses comandos diretamente no grupo</p>
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-border/20">
@@ -258,16 +234,16 @@ export default function Tutorial() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <Zap className="h-4 w-4 text-primary" />
-                Dicas Importantes
+                Dicas Úteis
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {[
-                "O bot precisa ser administrador do grupo para apagar mensagens e remover membros.",
-                "Administradores do grupo são automaticamente imunes à moderação.",
-                "Use a Whitelist para proteger membros específicos de serem moderados.",
-                "O webhook da Evolution API deve apontar para a Edge Function do WhatsGuard.",
-                "Mensagens enviadas pelo próprio número da instância são processadas como admin.",
+                "O bot precisa ser administrador do grupo para funcionar corretamente.",
+                "Administradores do grupo nunca são moderados pelo bot.",
+                "Para usar !warn ou !ban, responda à mensagem do membro que quer avisar/banir.",
+                "Você pode adicionar membros VIP na Whitelist para protegê-los da moderação.",
+                "O resumo diário com IA é enviado automaticamente todo dia no grupo.",
               ].map((tip, i) => (
                 <div key={i} className="flex items-start gap-2.5">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">

@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Shield, Check, Copy, Loader2, ArrowLeft, QrCode } from "lucide-react";
+import { Shield, Check, Copy, Loader2, ArrowLeft, QrCode, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Link, Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -19,6 +20,24 @@ export default function CheckoutPage() {
   const [customerDocument, setCustomerDocument] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [copied, setCopied] = useState(false);
+
+  const { data: expiredTrial } = useQuery({
+    queryKey: ["expired-trial", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("user_id", user!.id)
+        .eq("plan_name", "WhatsGuard Pro - Trial")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const isTrialExpired = expiredTrial && expiredTrial.expires_at && new Date(expiredTrial.expires_at) < new Date();
 
   if (!user) return <Navigate to="/login" replace />;
 
@@ -127,6 +146,19 @@ export default function CheckoutPage() {
       </nav>
 
       <div className="relative z-10 max-w-lg mx-auto px-6 py-16">
+        {isTrialExpired && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+            <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4 flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-yellow-400">Seu período de teste expirou</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Seus 3 dias grátis acabaram. Assine o WhatsGuard Pro para continuar usando todas as funcionalidades.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           {!pixData ? (
             <Card className="rounded-2xl border-primary/20 shadow-2xl shadow-primary/10 bg-card/80">

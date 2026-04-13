@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,23 @@ export default function Login() {
       toast.error(error.message);
     } else {
       navigate("/dashboard");
+    }
+    setLoading(false);
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      toast.error("Digite seu e-mail primeiro");
+      return;
+    }
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("E-mail de recuperação enviado! Verifique sua caixa de entrada.");
     }
     setLoading(false);
   };
@@ -114,8 +132,15 @@ export default function Login() {
                   </div>
                   <Button type="submit" className="w-full h-11 rounded-xl bg-gradient-to-r from-primary via-teal-500 to-cyan-500 hover:opacity-90 text-background font-bold shadow-lg shadow-primary/25 transition-all duration-300" disabled={loading}>
                     {loading ? "Entrando..." : "Entrar"}
-                  </Button>
-                </form>
+                   </Button>
+                   <button
+                     type="button"
+                     onClick={handleForgotPassword}
+                     className="w-full text-xs text-muted-foreground/60 hover:text-primary transition-colors"
+                   >
+                     Esqueceu sua senha?
+                   </button>
+                 </form>
               </TabsContent>
 
               <TabsContent value="signup">

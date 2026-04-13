@@ -166,6 +166,7 @@ export type Database = {
           image_url: string | null
           instance_id: string
           message: string
+          recurrence: string | null
           scheduled_at: string | null
           sent_count: number
           status: string
@@ -180,6 +181,7 @@ export type Database = {
           image_url?: string | null
           instance_id: string
           message: string
+          recurrence?: string | null
           scheduled_at?: string | null
           sent_count?: number
           status?: string
@@ -194,6 +196,7 @@ export type Database = {
           image_url?: string | null
           instance_id?: string
           message?: string
+          recurrence?: string | null
           scheduled_at?: string | null
           sent_count?: number
           status?: string
@@ -212,6 +215,79 @@ export type Database = {
           },
         ]
       }
+      daily_summaries: {
+        Row: {
+          created_at: string
+          date: string
+          group_id: string
+          id: string
+          members_active: Json | null
+          summary_text: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          group_id: string
+          id?: string
+          members_active?: Json | null
+          summary_text: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          group_id?: string
+          id?: string
+          members_active?: Json | null
+          summary_text?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_summaries_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_snapshots: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          participant_count: number
+          snapshot_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          participant_count?: number
+          snapshot_date?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          participant_count?: number
+          snapshot_date?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_snapshots_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       groups: {
         Row: {
           created_at: string
@@ -221,6 +297,7 @@ export type Database = {
           is_monitored: boolean
           name: string
           participant_count: number | null
+          rules_text: string | null
           updated_at: string
           user_id: string
           welcome_message: string | null
@@ -233,6 +310,7 @@ export type Database = {
           is_monitored?: boolean
           name: string
           participant_count?: number | null
+          rules_text?: string | null
           updated_at?: string
           user_id: string
           welcome_message?: string | null
@@ -245,6 +323,7 @@ export type Database = {
           is_monitored?: boolean
           name?: string
           participant_count?: number | null
+          rules_text?: string | null
           updated_at?: string
           user_id?: string
           welcome_message?: string | null

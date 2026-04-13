@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import {
   Shield, LayoutDashboard, Users, AlertTriangle, Ban,
   MessageSquareOff, ShieldCheck, Settings, LogOut, Menu, X,
-  Megaphone, ChevronRight
+  Megaphone, ChevronRight, BarChart3
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from "framer-motion";
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/groups", label: "Grupos", icon: Users },
+  { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/broadcast", label: "Divulgação", icon: Megaphone },
   { href: "/warnings", label: "Avisos", icon: AlertTriangle },
   { href: "/bans", label: "Banimentos", icon: Ban },

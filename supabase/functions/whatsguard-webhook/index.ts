@@ -211,6 +211,72 @@ Deno.serve(async (req) => {
     if (messageText.startsWith("!")) {
       const parts = messageText.trim().split(/\s+/);
       const command = parts[0].toLowerCase();
+
+      // ========================
+      // PUBLIC COMMANDS (no admin needed)
+      // ========================
+      if (command === "!menu") {
+        const menuText = `📋 *Comandos disponíveis:*\n\n` +
+          `👑 *Admin:*\n` +
+          `• !ban @usuario [motivo] — Banir\n` +
+          `• !warn @usuario [motivo] — Dar aviso\n` +
+          `• !unwarn @usuario — Resetar avisos\n\n` +
+          `📖 *Todos:*\n` +
+          `• !menu — Lista de comandos\n` +
+          `• !regras — Regras do grupo\n` +
+          `• !info — Informações do grupo`;
+        try {
+          await fetch(`${instance.api_url}/message/sendText/${instance.name}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", apikey: instance.api_key },
+            body: JSON.stringify({ number: groupJid, text: menuText }),
+          });
+        } catch (_) { /* ignore */ }
+        return new Response(JSON.stringify({ status: "processed", action: "command_menu" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (command === "!regras") {
+        const rulesText = group.rules_text || "📝 Nenhuma regra foi definida para este grupo ainda.\n\nO administrador pode configurar as regras pelo painel do WhatsGuard.";
+        try {
+          await fetch(`${instance.api_url}/message/sendText/${instance.name}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", apikey: instance.api_key },
+            body: JSON.stringify({ number: groupJid, text: `📜 *Regras do Grupo*\n\n${rulesText}` }),
+          });
+        } catch (_) { /* ignore */ }
+        return new Response(JSON.stringify({ status: "processed", action: "command_regras" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (command === "!info") {
+        const { count: warningCount } = await supabase
+          .from("warnings").select("id", { count: "exact", head: true }).eq("group_id", group.id);
+        const { count: banCount } = await supabase
+          .from("bans").select("id", { count: "exact", head: true }).eq("group_id", group.id).eq("is_active", true);
+        const infoText = `ℹ️ *Informações do Grupo*\n\n` +
+          `📛 *Nome:* ${group.name}\n` +
+          `👥 *Membros:* ${group.participant_count || "N/A"}\n` +
+          `⚠️ *Avisos ativos:* ${warningCount ?? 0}\n` +
+          `🚫 *Banimentos ativos:* ${banCount ?? 0}\n` +
+          `🛡️ *Monitoramento:* ${group.is_monitored ? "Ativo" : "Inativo"}`;
+        try {
+          await fetch(`${instance.api_url}/message/sendText/${instance.name}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", apikey: instance.api_key },
+            body: JSON.stringify({ number: groupJid, text: infoText }),
+          });
+        } catch (_) { /* ignore */ }
+        return new Response(JSON.stringify({ status: "processed", action: "command_info" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // ========================
+      // ADMIN COMMANDS
+      // ========================
       const supportedCommands = ["!ban", "!warn", "!unwarn"];
 
       if (supportedCommands.includes(command)) {
@@ -257,7 +323,6 @@ Deno.serve(async (req) => {
         const reason = parts.slice(2).join(" ") || "Comando manual de admin";
 
         if (command === "!ban") {
-          // Remove from group
           try {
             await fetch(`${instance.api_url}/group/updateParticipant/${instance.name}`, {
               method: "POST",

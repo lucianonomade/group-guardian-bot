@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Groups from "./pages/Groups";
 import GroupMembers from "./pages/GroupMembers";
+import Analytics from "./pages/Analytics";
 import Warnings from "./pages/Warnings";
 import Bans from "./pages/Bans";
 import BlockedWords from "./pages/BlockedWords";
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
             <Route path="/groups/:groupId/members" element={<ProtectedRoute><GroupMembers /></ProtectedRoute>} />
+            <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
             <Route path="/broadcast" element={<ProtectedRoute><BroadcastPage /></ProtectedRoute>} />
             <Route path="/warnings" element={<ProtectedRoute><Warnings /></ProtectedRoute>} />
             <Route path="/bans" element={<ProtectedRoute><Bans /></ProtectedRoute>} />

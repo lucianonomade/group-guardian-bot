@@ -425,6 +425,63 @@ export default function WarmupPage() {
           </Card>
         </motion.div>
       </motion.div>
+
+      {/* Logs Dialog */}
+      <Dialog open={logsOpen} onOpenChange={setLogsOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5 text-primary" />
+              Histórico de Mensagens
+            </DialogTitle>
+          </DialogHeader>
+          {logsLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : !logs?.length ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <MessageSquare className="h-10 w-10 mx-auto mb-2 opacity-30" />
+              <p className="text-sm">Nenhuma mensagem enviada ainda</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex gap-3 mb-4 text-sm">
+                <Badge variant="outline" className="gap-1">
+                  <CheckCircle2 className="h-3 w-3 text-green-400" />
+                  {logs.filter(l => l.status === "sent").length} enviadas
+                </Badge>
+                <Badge variant="outline" className="gap-1">
+                  <XCircle className="h-3 w-3 text-destructive" />
+                  {logs.filter(l => l.status === "error").length} erros
+                </Badge>
+              </div>
+              {logs.map((log: any) => (
+                <div key={log.id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border/30">
+                  {log.status === "sent" ? (
+                    <CheckCircle2 className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                  ) : (
+                    <XCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-mono text-xs text-muted-foreground">{log.target_number}</span>
+                      <Badge variant="outline" className="text-[10px] h-5">Dia {log.day_number}</Badge>
+                    </div>
+                    <p className="text-sm mt-1 truncate">{log.message_text}</p>
+                    {log.error_details && (
+                      <p className="text-xs text-destructive mt-1 truncate">{log.error_details}</p>
+                    )}
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {new Date(log.created_at).toLocaleString("pt-BR")}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }

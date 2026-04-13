@@ -377,11 +377,11 @@ export default function WarmupPage() {
               <DialogFooter>
                 <Button
                   onClick={() => createMutation.mutate()}
-                  disabled={!instanceId || !phoneNumber || !targetNumbers || createMutation.isPending}
+                  disabled={!instanceId || !phoneNumber || !targetNumbers || createMutation.isPending || uploadingImages}
                   className="gap-2"
                 >
-                  {createMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Criar Maturação
+                  {(createMutation.isPending || uploadingImages) && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {uploadingImages ? "Enviando imagens..." : "Criar Maturação"}
                 </Button>
               </DialogFooter>
             </DialogContent>

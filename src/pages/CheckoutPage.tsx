@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,17 +9,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
 export default function CheckoutPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [pixData, setPixData] = useState<{ pix_code?: string; pix_qrcode?: string } | null>(null);
+  const [pixData, setPixData] = useState<{ pix_code?: string; pix_qrcode?: string; transaction_id?: string } | null>(null);
   const [customerName, setCustomerName] = useState("");
   const [customerDocument, setCustomerDocument] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [copied, setCopied] = useState(false);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { data: expiredTrial } = useQuery({
     queryKey: ["expired-trial", user?.id],
@@ -38,6 +40,30 @@ export default function CheckoutPage() {
   });
 
   const isTrialExpired = expiredTrial && expiredTrial.expires_at && new Date(expiredTrial.expires_at) < new Date();
+
+  // Poll for payment confirmation
+  useEffect(() => {
+    if (!pixData?.transaction_id || !user) return;
+
+    pollingRef.current = setInterval(async () => {
+      const { data } = await supabase
+        .from("subscriptions")
+        .select("status")
+        .eq("user_id", user.id)
+        .eq("pepper_transaction_id", pixData.transaction_id!)
+        .maybeSingle();
+
+      if (data?.status === "active") {
+        if (pollingRef.current) clearInterval(pollingRef.current);
+        toast.success("Pagamento confirmado! Redirecionando...");
+        setTimeout(() => navigate("/dashboard"), 1500);
+      }
+    }, 5000);
+
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+  }, [pixData?.transaction_id, user, navigate]);
 
   if (!user) return <Navigate to="/login" replace />;
 
@@ -98,6 +124,7 @@ export default function CheckoutPage() {
         setPixData({
           pix_code: txData.data.pix_code || txData.data.pix?.code || "",
           pix_qrcode: txData.data.pix_qrcode || txData.data.pix?.qrcode || "",
+          transaction_id: txData.data.transaction_id || "",
         });
         toast.success("PIX gerado com sucesso!");
       } else {
@@ -270,19 +297,24 @@ export default function CheckoutPage() {
                 )}
 
                 <div className="rounded-xl bg-primary/5 border border-primary/10 p-4 text-center">
-                  <p className="text-xs text-muted-foreground/70">
-                    Após o pagamento, seu acesso será liberado automaticamente.
-                  </p>
-                  <p className="text-[10px] text-muted-foreground/40 mt-1">
-                    Valor: R$ 100,00
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                    <p className="text-xs text-muted-foreground/70">
+                      Aguardando confirmação do pagamento...
+                    </p>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground/40">
+                    Valor: R$ 100,00 • Verificando a cada 5 segundos
                   </p>
                 </div>
 
-                <Link to="/dashboard">
-                  <Button variant="outline" className="w-full rounded-xl h-11 font-semibold">
-                    Já paguei, ir para o Dashboard
-                  </Button>
-                </Link>
+                <Button
+                  variant="outline"
+                  className="w-full rounded-xl h-11 font-semibold"
+                  onClick={() => navigate("/dashboard")}
+                >
+                  Já paguei, ir para o Dashboard
+                </Button>
               </CardContent>
             </Card>
           )}

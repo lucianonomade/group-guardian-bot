@@ -58,6 +58,20 @@ export default function Analytics() {
   const [growthData, setGrowthData] = useState<GrowthPoint[]>([]);
   const [weeklyModeration, setWeeklyModeration] = useState<{ week: string; avisos: number; bans: number }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [generatingSummary, setGeneratingSummary] = useState(false);
+
+  const triggerDailySummary = async () => {
+    setGeneratingSummary(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("daily-summary", { method: "POST" as any });
+      if (error) throw error;
+      toast.success(`Resumo gerado para ${data?.processed || 0} de ${data?.total || 0} grupos!`);
+      fetchAnalytics();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao gerar resumo");
+    }
+    setGeneratingSummary(false);
+  };
 
   useEffect(() => {
     if (!user) return;

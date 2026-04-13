@@ -154,7 +154,7 @@ export default function WarmupPage() {
     <DashboardLayout>
       <motion.div className="space-y-6 sm:space-y-8" {...pageHeader}>
         {/* Header */}
-        <motion.div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" {...fadeUpItem}>
+        <motion.div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold font-display tracking-tight text-foreground flex items-center gap-3">
               <div className="p-2 rounded-xl bg-primary/10 border border-primary/20">
@@ -256,7 +256,7 @@ export default function WarmupPage() {
         </motion.div>
 
         {/* Stats */}
-        <motion.div className="grid grid-cols-2 sm:grid-cols-4 gap-3" {...fadeUpItem}>
+        <motion.div className="grid grid-cols-2 sm:grid-cols-4 gap-3" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
           {[
             { label: "Total", value: tasks?.length || 0, color: "text-foreground" },
             { label: "Ativos", value: tasks?.filter(t => t.status === "active").length || 0, color: "text-primary" },
@@ -273,7 +273,7 @@ export default function WarmupPage() {
         </motion.div>
 
         {/* Tasks list */}
-        <motion.div {...fadeUpItem}>
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
           <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-lg">Maturações</CardTitle>
@@ -373,7 +373,7 @@ export default function WarmupPage() {
         </motion.div>
 
         {/* How it works */}
-        <motion.div {...fadeUpItem}>
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
           <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-lg">Como funciona?</CardTitle>

@@ -52,6 +52,7 @@ const App = () => (
             <Route path="/whitelist" element={<ProtectedRoute><Whitelist /></ProtectedRoute>} />
             <Route path="/group-finder" element={<ProtectedRoute><GroupFinder /></ProtectedRoute>} />
             <Route path="/validate-numbers" element={<ProtectedRoute><ValidateNumbers /></ProtectedRoute>} />
+            <Route path="/warmup" element={<ProtectedRoute><WarmupPage /></ProtectedRoute>} />
             <Route path="/subscription" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
             <Route path="/tutorial" element={<ProtectedRoute><Tutorial /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />

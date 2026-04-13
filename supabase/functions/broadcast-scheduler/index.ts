@@ -77,6 +77,30 @@ Deno.serve(async () => {
       await supabase.from('broadcasts').update({ status: finalStatus, sent_count: sentCount }).eq('id', broadcast.id)
       totalProcessed++
       console.log(`Broadcast ${broadcast.id}: ${finalStatus} (${sentCount}/${targetGroups.length})`)
+
+      // Handle recurrence: create next scheduled broadcast
+      if (broadcast.recurrence && (broadcast.recurrence === 'daily' || broadcast.recurrence === 'weekly')) {
+        const scheduledAt = new Date(broadcast.scheduled_at)
+        const nextDate = new Date(scheduledAt)
+        if (broadcast.recurrence === 'daily') {
+          nextDate.setDate(nextDate.getDate() + 1)
+        } else {
+          nextDate.setDate(nextDate.getDate() + 7)
+        }
+
+        await supabase.from('broadcasts').insert({
+          user_id: broadcast.user_id,
+          instance_id: broadcast.instance_id,
+          message: broadcast.message,
+          image_url: broadcast.image_url,
+          target_groups: broadcast.target_groups,
+          status: 'scheduled',
+          total_count: broadcast.total_count,
+          scheduled_at: nextDate.toISOString(),
+          recurrence: broadcast.recurrence,
+        })
+        console.log(`Recurring broadcast re-scheduled for ${nextDate.toISOString()}`)
+      }
     }
 
     return new Response(JSON.stringify({ processed: totalProcessed }))

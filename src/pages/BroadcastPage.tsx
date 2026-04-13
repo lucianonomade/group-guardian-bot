@@ -15,7 +15,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Megaphone, Search, ImagePlus, Send, Loader2, Trash2, Clock, CheckCircle, XCircle, Users, RefreshCw, CalendarIcon, Timer } from "lucide-react";
+import { Megaphone, Search, ImagePlus, Send, Loader2, Trash2, Clock, CheckCircle, XCircle, Users, RefreshCw, CalendarIcon, Timer, Repeat } from "lucide-react";
 import { motion } from "framer-motion";
 import { pageHeader, fadeUpItem, staggerContainer, scaleUpItem } from "@/lib/animations";
 import { format } from "date-fns";
@@ -44,6 +44,7 @@ interface Broadcast {
   total_count: number;
   created_at: string;
   scheduled_at: string | null;
+  recurrence: string | null;
 }
 
 export default function BroadcastPage() {
@@ -63,6 +64,7 @@ export default function BroadcastPage() {
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>(undefined);
   const [scheduledHour, setScheduledHour] = useState("12");
   const [scheduledMinute, setScheduledMinute] = useState("00");
+  const [recurrence, setRecurrence] = useState<string>("none");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Check for scheduled broadcasts to process
@@ -219,6 +221,7 @@ export default function BroadcastPage() {
           status: scheduledAt ? "scheduled" : "pending",
           total_count: selectedGroups.size,
           scheduled_at: scheduledAt,
+          recurrence: isScheduled && recurrence !== "none" ? recurrence : null,
         } as any)
         .select()
         .single();
@@ -244,6 +247,7 @@ export default function BroadcastPage() {
       setScheduledDate(undefined);
       setScheduledHour("12");
       setScheduledMinute("00");
+      setRecurrence("none");
       fetchHistory();
     } catch (err: any) {
       toast.error(err.message || "Erro ao enviar divulgação");
@@ -470,48 +474,66 @@ export default function BroadcastPage() {
                   </div>
 
                   {isScheduled && (
-                    <div className="flex flex-wrap gap-3 pt-1">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn("text-xs h-9 px-3 justify-start", !scheduledDate && "text-muted-foreground")}
-                          >
-                            <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                            {scheduledDate ? format(scheduledDate, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={scheduledDate}
-                            onSelect={setScheduledDate}
-                            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                            initialFocus
-                            className={cn("p-3 pointer-events-auto")}
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <div className="flex items-center gap-1">
-                        <Select value={scheduledHour} onValueChange={setScheduledHour}>
-                          <SelectTrigger className="w-16 h-9 text-xs">
+                    <div className="space-y-3 pt-1">
+                      <div className="flex flex-wrap gap-3">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn("text-xs h-9 px-3 justify-start", !scheduledDate && "text-muted-foreground")}
+                            >
+                              <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                              {scheduledDate ? format(scheduledDate, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={scheduledDate}
+                              onSelect={setScheduledDate}
+                              disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                              initialFocus
+                              className={cn("p-3 pointer-events-auto")}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <div className="flex items-center gap-1">
+                          <Select value={scheduledHour} onValueChange={setScheduledHour}>
+                            <SelectTrigger className="w-16 h-9 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0")).map(h => (
+                                <SelectItem key={h} value={h} className="text-xs">{h}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <span className="text-xs text-muted-foreground font-bold">:</span>
+                          <Select value={scheduledMinute} onValueChange={setScheduledMinute}>
+                            <SelectTrigger className="w-16 h-9 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {["00", "15", "30", "45"].map(m => (
+                                <SelectItem key={m} value={m} className="text-xs">{m}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Recurrence */}
+                      <div className="flex items-center gap-3">
+                        <Repeat className="h-3.5 w-3.5 text-muted-foreground" />
+                        <Label className="text-xs">Repetir:</Label>
+                        <Select value={recurrence} onValueChange={setRecurrence}>
+                          <SelectTrigger className="w-40 h-9 text-xs">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0")).map(h => (
-                              <SelectItem key={h} value={h} className="text-xs">{h}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <span className="text-xs text-muted-foreground font-bold">:</span>
-                        <Select value={scheduledMinute} onValueChange={setScheduledMinute}>
-                          <SelectTrigger className="w-16 h-9 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {["00", "15", "30", "45"].map(m => (
-                              <SelectItem key={m} value={m} className="text-xs">{m}</SelectItem>
-                            ))}
+                            <SelectItem value="none" className="text-xs">Envio único</SelectItem>
+                            <SelectItem value="daily" className="text-xs">Diariamente</SelectItem>
+                            <SelectItem value="weekly" className="text-xs">Semanalmente</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -584,6 +606,12 @@ export default function BroadcastPage() {
                               {b.image_url && (
                                 <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-border/30">
                                   📷 Imagem
+                                </Badge>
+                              )}
+                              {b.recurrence && (
+                                <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-border/30">
+                                  <Repeat className="h-2 w-2 mr-0.5" />
+                                  {b.recurrence === "daily" ? "Diário" : "Semanal"}
                                 </Badge>
                               )}
                             </div>

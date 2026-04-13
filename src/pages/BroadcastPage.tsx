@@ -44,6 +44,7 @@ interface Broadcast {
   total_count: number;
   created_at: string;
   scheduled_at: string | null;
+  recurrence: string | null;
 }
 
 export default function BroadcastPage() {
@@ -605,6 +606,12 @@ export default function BroadcastPage() {
                               {b.image_url && (
                                 <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-border/30">
                                   📷 Imagem
+                                </Badge>
+                              )}
+                              {b.recurrence && (
+                                <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-border/30">
+                                  <Repeat className="h-2 w-2 mr-0.5" />
+                                  {b.recurrence === "daily" ? "Diário" : "Semanal"}
                                 </Badge>
                               )}
                             </div>

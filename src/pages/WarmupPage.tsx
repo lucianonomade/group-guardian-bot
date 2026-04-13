@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Flame, Play, Pause, Trash2, Plus, Loader2, CheckCircle2, Clock, AlertTriangle, History, MessageSquare, XCircle } from "lucide-react";
+import { Flame, Play, Pause, Trash2, Plus, Loader2, CheckCircle2, Clock, AlertTriangle, History, MessageSquare, XCircle, ImagePlus, X } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
 import { pageHeader } from "@/lib/animations";
@@ -47,6 +47,9 @@ export default function WarmupPage() {
   const [customPlan, setCustomPlan] = useState(DEFAULT_PLAN);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [logsOpen, setLogsOpen] = useState(false);
+  const [customMessages, setCustomMessages] = useState("");
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   const { data: instances } = useQuery({
     queryKey: ["instances", user?.id],
@@ -129,6 +132,33 @@ export default function WarmupPage() {
 
       const plan = customPlan.slice(0, totalDays).map((p, i) => ({ day: i + 1, messages: p.messages }));
 
+      // Parse custom messages
+      const msgs = customMessages
+        .split("\n")
+        .map(m => m.trim())
+        .filter(m => m.length > 0);
+
+      // Upload images
+      let uploadedUrls: string[] = [];
+      if (imageFiles.length > 0) {
+        setUploadingImages(true);
+        for (const file of imageFiles) {
+          const filePath = `${user!.id}/${Date.now()}-${file.name}`;
+          const { error: uploadErr } = await supabase.storage
+            .from("warmup-images")
+            .upload(filePath, file);
+          if (uploadErr) {
+            console.error("Upload error:", uploadErr);
+            continue;
+          }
+          const { data: urlData } = supabase.storage
+            .from("warmup-images")
+            .getPublicUrl(filePath);
+          uploadedUrls.push(urlData.publicUrl);
+        }
+        setUploadingImages(false);
+      }
+
       const { error } = await supabase.from("warmup_tasks").insert({
         user_id: user!.id,
         instance_id: instanceId,
@@ -136,6 +166,8 @@ export default function WarmupPage() {
         target_numbers: targets,
         total_days: totalDays,
         schedule_plan: plan,
+        custom_messages: msgs,
+        image_urls: uploadedUrls,
         status: "pending",
       });
       if (error) throw error;
@@ -146,6 +178,8 @@ export default function WarmupPage() {
       setCreateOpen(false);
       setPhoneNumber("");
       setTargetNumbers("");
+      setCustomMessages("");
+      setImageFiles([]);
     },
     onError: (e: any) => toast.error(e.message || "Erro ao criar maturação"),
   });
@@ -254,6 +288,61 @@ export default function WarmupPage() {
                   <p className="text-xs text-muted-foreground mt-1">Números reais que receberão as mensagens de aquecimento</p>
                 </div>
                 <div>
+                  <Label>Mensagens Personalizadas (1 por linha)</Label>
+                  <Textarea
+                    placeholder="Oi, tudo bem?&#10;Bom dia! Como vai?&#10;E aí, beleza?&#10;(deixe vazio para usar mensagens padrão)"
+                    value={customMessages}
+                    onChange={e => setCustomMessages(e.target.value)}
+                    rows={4}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {customMessages.split("\n").filter(m => m.trim()).length || 0} mensagens • Deixe vazio para usar as padrão
+                  </p>
+                </div>
+                <div>
+                  <Label>Imagens Pré-programadas</Label>
+                  <div className="mt-2 space-y-2">
+                    <label className="flex items-center gap-2 cursor-pointer p-3 rounded-lg border border-dashed border-border/50 hover:border-primary/50 transition-colors">
+                      <ImagePlus className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Clique para adicionar imagens</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={e => {
+                          if (e.target.files) {
+                            setImageFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+                          }
+                        }}
+                      />
+                    </label>
+                    {imageFiles.length > 0 && (
+                      <div className="grid grid-cols-4 gap-2">
+                        {imageFiles.map((file, i) => (
+                          <div key={i} className="relative group">
+                            <img
+                              src={URL.createObjectURL(file)}
+                              alt={file.name}
+                              className="w-full h-16 object-cover rounded-lg border border-border/30"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setImageFiles(prev => prev.filter((_, idx) => idx !== i))}
+                              className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      30% de chance de enviar imagem ao invés de texto • {imageFiles.length} imagem(ns)
+                    </p>
+                  </div>
+                </div>
+                <div>
                   <Label>Duração (dias)</Label>
                   <Select value={String(totalDays)} onValueChange={v => handleTotalDaysChange(Number(v))}>
                     <SelectTrigger>
@@ -288,11 +377,11 @@ export default function WarmupPage() {
               <DialogFooter>
                 <Button
                   onClick={() => createMutation.mutate()}
-                  disabled={!instanceId || !phoneNumber || !targetNumbers || createMutation.isPending}
+                  disabled={!instanceId || !phoneNumber || !targetNumbers || createMutation.isPending || uploadingImages}
                   className="gap-2"
                 >
-                  {createMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Criar Maturação
+                  {(createMutation.isPending || uploadingImages) && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {uploadingImages ? "Enviando imagens..." : "Criar Maturação"}
                 </Button>
               </DialogFooter>
             </DialogContent>

@@ -473,48 +473,66 @@ export default function BroadcastPage() {
                   </div>
 
                   {isScheduled && (
-                    <div className="flex flex-wrap gap-3 pt-1">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn("text-xs h-9 px-3 justify-start", !scheduledDate && "text-muted-foreground")}
-                          >
-                            <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                            {scheduledDate ? format(scheduledDate, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={scheduledDate}
-                            onSelect={setScheduledDate}
-                            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                            initialFocus
-                            className={cn("p-3 pointer-events-auto")}
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <div className="flex items-center gap-1">
-                        <Select value={scheduledHour} onValueChange={setScheduledHour}>
-                          <SelectTrigger className="w-16 h-9 text-xs">
+                    <div className="space-y-3 pt-1">
+                      <div className="flex flex-wrap gap-3">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn("text-xs h-9 px-3 justify-start", !scheduledDate && "text-muted-foreground")}
+                            >
+                              <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                              {scheduledDate ? format(scheduledDate, "dd/MM/yyyy", { locale: ptBR }) : "Selecionar data"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={scheduledDate}
+                              onSelect={setScheduledDate}
+                              disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                              initialFocus
+                              className={cn("p-3 pointer-events-auto")}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <div className="flex items-center gap-1">
+                          <Select value={scheduledHour} onValueChange={setScheduledHour}>
+                            <SelectTrigger className="w-16 h-9 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0")).map(h => (
+                                <SelectItem key={h} value={h} className="text-xs">{h}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <span className="text-xs text-muted-foreground font-bold">:</span>
+                          <Select value={scheduledMinute} onValueChange={setScheduledMinute}>
+                            <SelectTrigger className="w-16 h-9 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {["00", "15", "30", "45"].map(m => (
+                                <SelectItem key={m} value={m} className="text-xs">{m}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Recurrence */}
+                      <div className="flex items-center gap-3">
+                        <Repeat className="h-3.5 w-3.5 text-muted-foreground" />
+                        <Label className="text-xs">Repetir:</Label>
+                        <Select value={recurrence} onValueChange={setRecurrence}>
+                          <SelectTrigger className="w-40 h-9 text-xs">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0")).map(h => (
-                              <SelectItem key={h} value={h} className="text-xs">{h}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <span className="text-xs text-muted-foreground font-bold">:</span>
-                        <Select value={scheduledMinute} onValueChange={setScheduledMinute}>
-                          <SelectTrigger className="w-16 h-9 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {["00", "15", "30", "45"].map(m => (
-                              <SelectItem key={m} value={m} className="text-xs">{m}</SelectItem>
-                            ))}
+                            <SelectItem value="none" className="text-xs">Envio único</SelectItem>
+                            <SelectItem value="daily" className="text-xs">Diariamente</SelectItem>
+                            <SelectItem value="weekly" className="text-xs">Semanalmente</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

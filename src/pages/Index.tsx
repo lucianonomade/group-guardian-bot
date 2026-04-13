@@ -215,7 +215,7 @@ export default function Index() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Button variant="outline" className="border-primary/30 text-primary hover:bg-primary/10 text-xs font-bold tracking-wider uppercase gap-2">
+              <Button variant="outline" onClick={exportReport} className="border-primary/30 text-primary hover:bg-primary/10 text-xs font-bold tracking-wider uppercase gap-2">
                 <FileDown className="h-3.5 w-3.5" />
                 Export Report
               </Button>

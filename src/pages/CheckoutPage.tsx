@@ -23,8 +23,8 @@ export default function CheckoutPage() {
   if (!user) return <Navigate to="/login" replace />;
 
   const handleCreatePix = async () => {
-    if (!customerName.trim() || !customerDocument.trim()) {
-      toast.error("Preencha seu nome e CPF");
+    if (!customerName.trim() || !customerDocument.trim() || !customerPhone.trim()) {
+      toast.error("Preencha todos os campos");
       return;
     }
 

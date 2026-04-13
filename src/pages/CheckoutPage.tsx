@@ -297,19 +297,24 @@ export default function CheckoutPage() {
                 )}
 
                 <div className="rounded-xl bg-primary/5 border border-primary/10 p-4 text-center">
-                  <p className="text-xs text-muted-foreground/70">
-                    Após o pagamento, seu acesso será liberado automaticamente.
-                  </p>
-                  <p className="text-[10px] text-muted-foreground/40 mt-1">
-                    Valor: R$ 100,00
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                    <p className="text-xs text-muted-foreground/70">
+                      Aguardando confirmação do pagamento...
+                    </p>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground/40">
+                    Valor: R$ 100,00 • Verificando a cada 5 segundos
                   </p>
                 </div>
 
-                <Link to="/dashboard">
-                  <Button variant="outline" className="w-full rounded-xl h-11 font-semibold">
-                    Já paguei, ir para o Dashboard
-                  </Button>
-                </Link>
+                <Button
+                  variant="outline"
+                  className="w-full rounded-xl h-11 font-semibold"
+                  onClick={() => navigate("/dashboard")}
+                >
+                  Já paguei, ir para o Dashboard
+                </Button>
               </CardContent>
             </Card>
           )}

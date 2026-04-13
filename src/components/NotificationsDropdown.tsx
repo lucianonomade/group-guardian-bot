@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Bell, AlertTriangle, Ban, Link2, ShieldAlert, MessageSquareOff, CheckCheck } from "lucide-react";
@@ -40,31 +40,7 @@ export function NotificationsDropdown() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    if (!user) return;
-    
-    let isMounted = true;
-    fetchNotifications();
-
-    const channel = supabase.channel(`notif-${user.id}-${Date.now()}`);
-    
-    channel.on(
-      "postgres_changes" as any,
-      { event: "INSERT", schema: "public", table: "action_logs" },
-      () => {
-        if (isMounted) fetchNotifications();
-      }
-    );
-    
-    channel.subscribe();
-
-    return () => {
-      isMounted = false;
-      supabase.removeChannel(channel);
-    };
-  }, [user]);
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     const { data } = await supabase
       .from("action_logs")
       .select("id, action_type, participant_name, details, created_at")
@@ -73,7 +49,26 @@ export function NotificationsDropdown() {
     const items = (data as Notification[]) ?? [];
     setNotifications(items);
     setUnreadCount(Math.min(items.length, 9));
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    
+    fetchNotifications();
+
+    const channel = supabase
+      .channel(crypto.randomUUID())
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "action_logs", filter: `user_id=eq.${user.id}` },
+        () => { fetchNotifications(); }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [user, fetchNotifications]);
 
   const markAllRead = () => {
     setUnreadCount(0);

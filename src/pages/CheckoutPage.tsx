@@ -36,13 +36,11 @@ export default function CheckoutPage() {
 
       if (setupError) throw setupError;
 
-      // Get offer hash from the created/existing product
-      let offerHash = "";
-      if (setupData?.data?.data?.offers?.[0]?.hash) {
-        offerHash = setupData.data.data.offers[0].hash;
-      } else if (setupData?.data?.offers?.[0]?.hash) {
-        offerHash = setupData.data.offers[0].hash;
-      }
+      // Get offer hash from setup response
+      let offerHash = setupData?.offer_hash || 
+        setupData?.data?.offer_hash ||
+        setupData?.data?.data?.offers?.[0]?.hash ||
+        setupData?.data?.offers?.[0]?.hash || "";
 
       if (!offerHash) {
         // Try listing products to find existing offer

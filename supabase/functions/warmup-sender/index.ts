@@ -172,7 +172,7 @@ Deno.serve(async (req) => {
             user_id: task.user_id,
             warmup_task_id: task.id,
             target_number: targetNumber,
-            message_text: message,
+            message_text: sentContent,
             status: "sent",
             day_number: task.current_day,
           });

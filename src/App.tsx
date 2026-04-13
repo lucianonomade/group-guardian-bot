@@ -26,6 +26,7 @@ import CheckoutPage from "./pages/CheckoutPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
 import AdminPage from "./pages/AdminPage";
 import ResetPassword from "./pages/ResetPassword";
+import BackupPage from "./pages/BackupPage";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,7 @@ const App = () => (
             <Route path="/subscription" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
             <Route path="/tutorial" element={<ProtectedRoute><Tutorial /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+            <Route path="/backup" element={<ProtectedRoute><BackupPage /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

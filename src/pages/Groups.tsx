@@ -13,7 +13,7 @@ import { WelcomeMessageDialog } from "@/components/WelcomeMessageDialog";
 import { AntifloodDialog } from "@/components/AntifloodDialog";
 import { GroupRulesDialog } from "@/components/GroupRulesDialog";
 import { toast } from "sonner";
-import { Users, Search, RefreshCw, MessageSquare, ShieldAlert, Eye, BookOpen } from "lucide-react";
+import { Users, Search, RefreshCw, MessageSquare, ShieldAlert, Eye, BookOpen, Archive } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { pageHeader, fadeUpItem, tableRowItem } from "@/lib/animations";
 
@@ -196,14 +196,15 @@ export default function Groups() {
                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Regras</TableHead>
                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Anti-flood</TableHead>
                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Status</TableHead>
-                     <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Monitorar</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Backup</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Monitorar</TableHead>
                    </TableRow>
                  </TableHeader>
                  <TableBody>
                    {loading ? (
-                      <TableRow><TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-10">Carregando...</TableCell></TableRow>
-                    ) : filtered.length === 0 ? (
-                      <TableRow><TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-10">
+                       <TableRow><TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-10">Carregando...</TableCell></TableRow>
+                     ) : filtered.length === 0 ? (
+                       <TableRow><TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-10">
                         {instances.length === 0 ? "Configure uma instância primeiro" : "Nenhum grupo encontrado"}
                      </TableCell></TableRow>
                    ) : (

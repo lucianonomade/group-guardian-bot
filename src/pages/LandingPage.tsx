@@ -179,7 +179,7 @@ export default function LandingPage() {
             Escolha o plano ideal para o tamanho da sua operação
           </p>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-5xl mx-auto items-start">
+        <div className="flex justify-center max-w-lg mx-auto">
           {plans.map((plan, i) => (
             <motion.div
               key={plan.name}

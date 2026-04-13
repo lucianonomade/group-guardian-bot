@@ -1,10 +1,11 @@
 import { useAuth } from "@/contexts/AuthContext";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   const { data: subscription, isLoading: subLoading } = useQuery({
     queryKey: ["subscription", user?.id],
@@ -35,6 +36,11 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Allow access to subscription page even without active sub
+  if (location.pathname === "/subscription") {
+    return <>{children}</>;
   }
 
   if (!subscription) {

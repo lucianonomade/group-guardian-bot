@@ -220,6 +220,7 @@ export default function BroadcastPage() {
           status: scheduledAt ? "scheduled" : "pending",
           total_count: selectedGroups.size,
           scheduled_at: scheduledAt,
+          recurrence: isScheduled && recurrence !== "none" ? recurrence : null,
         } as any)
         .select()
         .single();
@@ -245,6 +246,7 @@ export default function BroadcastPage() {
       setScheduledDate(undefined);
       setScheduledHour("12");
       setScheduledMinute("00");
+      setRecurrence("none");
       fetchHistory();
     } catch (err: any) {
       toast.error(err.message || "Erro ao enviar divulgação");

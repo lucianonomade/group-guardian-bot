@@ -29,6 +29,7 @@ const navItems = [
   { href: "/blocked-words", label: "Palavras Bloqueadas", icon: MessageSquareOff },
   { href: "/whitelist", label: "Whitelist", icon: ShieldCheck },
   { href: "/validate-numbers", label: "Validar Números", icon: Phone },
+  { href: "/warmup", label: "Maturador", icon: Flame },
   { href: "/subscription", label: "Assinatura", icon: CreditCard },
   { href: "/tutorial", label: "Tutorial", icon: BookOpen },
   { href: "/settings", label: "Configurações", icon: Settings },

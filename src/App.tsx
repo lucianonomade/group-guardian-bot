@@ -20,6 +20,7 @@ import BroadcastPage from "./pages/BroadcastPage";
 import GroupFinder from "./pages/GroupFinder";
 import Tutorial from "./pages/Tutorial";
 import ValidateNumbers from "./pages/ValidateNumbers";
+import WarmupPage from "./pages/WarmupPage";
 import NotFound from "./pages/NotFound";
 import CheckoutPage from "./pages/CheckoutPage";
 import SubscriptionPage from "./pages/SubscriptionPage";

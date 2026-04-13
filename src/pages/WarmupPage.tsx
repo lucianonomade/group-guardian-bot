@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { Flame, Play, Pause, Trash2, Plus, Loader2, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
-import { pageHeader, fadeUpItem } from "@/lib/animations";
+import { pageHeader } from "@/lib/animations";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 

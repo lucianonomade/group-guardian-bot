@@ -4,10 +4,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Shield, LayoutDashboard, Users, AlertTriangle, Ban,
   MessageSquareOff, ShieldCheck, Settings, LogOut, Menu, X,
-  Megaphone, ChevronRight, BarChart3, Radar, BookOpen, Phone, CreditCard, ShieldAlert
+  Megaphone, ChevronRight, BarChart3, Radar, BookOpen, Phone, CreditCard, ShieldAlert,
+  Globe, Bell, Search, User
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -33,6 +35,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const { signOut, user } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: isAdmin } = useQuery({
     queryKey: ["is-admin", user?.id],
@@ -89,7 +92,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
               WhatsGuard
             </span>
             <span className="text-[9px] font-semibold text-primary/50 uppercase tracking-[0.2em]">
-              Moderação Bot
+              Sentinel Protocol V2.4
             </span>
           </div>
           <Button variant="ghost" size="icon" className="ml-auto text-sidebar-foreground/40 lg:hidden" onClick={() => setSidebarOpen(false)}>
@@ -98,7 +101,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 space-y-1 px-3 py-6">
+        <nav className="flex-1 space-y-1 px-3 py-6 overflow-y-auto">
           <p className="mb-3 px-3 text-[9px] font-bold uppercase tracking-[0.25em] text-sidebar-foreground/25">
             Navegação
           </p>
@@ -166,6 +169,35 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
 
       {/* Main content */}
       <main className="relative flex-1 overflow-auto">
+        {/* Desktop top bar */}
+        <header className="hidden lg:flex h-16 items-center gap-4 border-b border-border/30 px-8 bg-background/60 backdrop-blur-xl sticky top-0 z-30">
+          <div className="relative flex-1 max-w-lg">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/40" />
+            <Input
+              placeholder="Pesquisar em grupos ou logs..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="pl-10 bg-muted/20 border-border/30 h-10 text-sm placeholder:text-muted-foreground/30 focus:border-primary/30"
+            />
+          </div>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground/50 hover:text-foreground">
+              <Globe className="h-[18px] w-[18px]" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground/50 hover:text-foreground relative">
+              <Bell className="h-[18px] w-[18px]" />
+              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary shadow-sm shadow-primary/50" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground/50 hover:text-foreground">
+              <Settings className="h-[18px] w-[18px]" />
+            </Button>
+            <div className="ml-2 flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary via-teal-400 to-cyan-400 shadow-md shadow-primary/20">
+              <User className="h-4 w-4 text-background" />
+            </div>
+          </div>
+        </header>
+
+        {/* Mobile top bar */}
         <header className="flex h-16 items-center gap-4 border-b border-border/30 px-5 lg:hidden bg-background/80 backdrop-blur-xl sticky top-0 z-30">
           <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)} className="text-muted-foreground">
             <Menu className="h-5 w-5" />
@@ -176,7 +208,16 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
             </div>
             <span className="text-sm font-bold" style={{ fontFamily: "'Syne', sans-serif" }}>WhatsGuard</span>
           </div>
+          <div className="ml-auto flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground/50">
+              <Bell className="h-4 w-4" />
+            </Button>
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary to-cyan-400">
+              <User className="h-3.5 w-3.5 text-background" />
+            </div>
+          </div>
         </header>
+
         <div className="relative p-6 lg:p-10">
           {children}
         </div>

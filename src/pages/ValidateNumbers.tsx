@@ -46,6 +46,60 @@ export default function ValidateNumbers() {
     enabled: !!user,
   });
 
+  const { data: groups } = useQuery({
+    queryKey: ["groups-with-instances", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("groups")
+        .select("*, instances(*)")
+        .eq("user_id", user!.id)
+        .eq("is_monitored", true)
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const importGroupMembers = async (groupId: string) => {
+    const group = groups?.find((g: any) => g.id === groupId);
+    if (!group || !group.instances) return;
+
+    setImportingGroup(groupId);
+    try {
+      const instance = group.instances as any;
+      const res = await fetch(
+        `${instance.api_url}/group/participants/${instance.name}?groupJid=${group.group_jid}`,
+        { headers: { apikey: instance.api_key } }
+      );
+      const data = await res.json();
+      const participants = data?.participants || data || [];
+
+      const numbers = participants
+        .map((p: any) => {
+          const jid = p.id || p.jid || p.phoneNumber || "";
+          return jid.replace("@s.whatsapp.net", "").replace(/\D/g, "");
+        })
+        .filter((n: string) => n.length >= 10);
+
+      if (!numbers.length) {
+        toast.info("Nenhum membro encontrado neste grupo");
+        return;
+      }
+
+      const existing = numbersText.trim();
+      const newText = existing ? `${existing}\n${numbers.join("\n")}` : numbers.join("\n");
+      setNumbersText(newText);
+      setImportDialogOpen(false);
+      toast.success(`${numbers.length} número(s) importado(s) do grupo "${group.name}"`);
+    } catch (e) {
+      console.error("Import error:", e);
+      toast.error("Erro ao importar membros do grupo");
+    } finally {
+      setImportingGroup(null);
+    }
+  };
+
   const handleValidate = async () => {
     if (!instanceId) {
       toast.error("Selecione uma instância");

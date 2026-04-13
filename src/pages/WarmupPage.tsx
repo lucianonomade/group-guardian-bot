@@ -76,6 +76,21 @@ export default function WarmupPage() {
     enabled: !!user,
   });
 
+  const { data: logs, isLoading: logsLoading } = useQuery({
+    queryKey: ["warmup-logs", selectedTaskId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("warmup_logs")
+        .select("*")
+        .eq("warmup_task_id", selectedTaskId!)
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedTaskId && logsOpen,
+  });
+
   const createMutation = useMutation({
     mutationFn: async () => {
       const targets = targetNumbers

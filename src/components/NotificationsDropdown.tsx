@@ -42,17 +42,26 @@ export function NotificationsDropdown() {
 
   useEffect(() => {
     if (!user) return;
+    
+    let isMounted = true;
     fetchNotifications();
 
-    const channelName = `notifications-realtime-${Date.now()}`;
-    const channel = supabase
-      .channel(channelName)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "action_logs" }, () => {
-        fetchNotifications();
-      })
-      .subscribe();
+    const channel = supabase.channel(`notif-${user.id}-${Date.now()}`);
+    
+    channel.on(
+      "postgres_changes" as any,
+      { event: "INSERT", schema: "public", table: "action_logs" },
+      () => {
+        if (isMounted) fetchNotifications();
+      }
+    );
+    
+    channel.subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      isMounted = false;
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const fetchNotifications = async () => {

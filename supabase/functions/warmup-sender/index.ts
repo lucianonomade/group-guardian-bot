@@ -33,8 +33,16 @@ const WARMUP_MESSAGES = [
   "Vou ver aqui e te aviso",
 ];
 
-function getRandomMessage(): string {
-  return WARMUP_MESSAGES[Math.floor(Math.random() * WARMUP_MESSAGES.length)];
+function getRandomMessage(customMessages: string[]): string {
+  const pool = customMessages.length > 0 ? customMessages : WARMUP_MESSAGES;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function getRandomImage(imageUrls: string[]): string | null {
+  if (!imageUrls || imageUrls.length === 0) return null;
+  // 30% chance to send an image instead of text
+  if (Math.random() > 0.3) return null;
+  return imageUrls[Math.floor(Math.random() * imageUrls.length)];
 }
 
 function sleep(ms: number): Promise<void> {
@@ -108,23 +116,50 @@ Deno.serve(async (req) => {
 
       // Send one message per invocation to spread out
       const targetNumber = task.target_numbers[Math.floor(Math.random() * task.target_numbers.length)];
-      const message = getRandomMessage();
+      const customMsgs: string[] = task.custom_messages || [];
+      const imgUrls: string[] = task.image_urls || [];
+      const imageUrl = getRandomImage(imgUrls);
+      const message = getRandomMessage(customMsgs);
 
       try {
-        const res = await fetch(
-          `${instance.api_url}/message/sendText/${instance.name}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              apikey: instance.api_key,
-            },
-            body: JSON.stringify({
-              number: targetNumber,
-              text: message,
-            }),
-          }
-        );
+        let res: Response;
+        let sentContent = message;
+
+        if (imageUrl) {
+          // Send image with optional caption
+          res = await fetch(
+            `${instance.api_url}/message/sendMedia/${instance.name}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                apikey: instance.api_key,
+              },
+              body: JSON.stringify({
+                number: targetNumber,
+                mediatype: "image",
+                media: imageUrl,
+                caption: message,
+              }),
+            }
+          );
+          sentContent = `[IMG] ${message}`;
+        } else {
+          res = await fetch(
+            `${instance.api_url}/message/sendText/${instance.name}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                apikey: instance.api_key,
+              },
+              body: JSON.stringify({
+                number: targetNumber,
+                text: message,
+              }),
+            }
+          );
+        }
 
         if (res.ok) {
           totalSent++;

@@ -202,7 +202,46 @@ export default function ValidateNumbers() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Números</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-muted-foreground">Números</Label>
+                  <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-xs border-border/50 h-7">
+                        <Users className="h-3 w-3 mr-1" /> Importar do Grupo
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="glass-card border-border/50">
+                      <DialogHeader>
+                        <DialogTitle className="text-base">Importar Membros do Grupo</DialogTitle>
+                      </DialogHeader>
+                      <p className="text-xs text-muted-foreground">Selecione um grupo para importar os números dos membros.</p>
+                      <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                        {groups?.map((g: any) => (
+                          <Button
+                            key={g.id}
+                            variant="outline"
+                            className="w-full justify-between border-border/30 hover:border-primary/30 hover:bg-primary/5 text-sm"
+                            disabled={importingGroup === g.id}
+                            onClick={() => importGroupMembers(g.id)}
+                          >
+                            <span className="truncate">{g.name}</span>
+                            <span className="flex items-center gap-2 text-muted-foreground/50 text-xs">
+                              {g.participant_count || "?"} membros
+                              {importingGroup === g.id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Users className="h-3.5 w-3.5" />
+                              )}
+                            </span>
+                          </Button>
+                        ))}
+                        {!groups?.length && (
+                          <p className="text-xs text-muted-foreground text-center py-4">Nenhum grupo monitorado</p>
+                        )}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
                 <Textarea
                   placeholder={"5511999999999\n5521988888888\n5531977777777"}
                   value={numbersText}

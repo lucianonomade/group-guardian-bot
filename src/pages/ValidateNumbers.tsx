@@ -136,7 +136,7 @@ export default function ValidateNumbers() {
       const newText = existing ? `${existing}\n${numbers.join("\n")}` : numbers.join("\n");
       setNumbersText(newText);
       setImportDialogOpen(false);
-      toast.success(`${numbers.length} número(s) importado(s) do grupo "${group.name}"`);
+      toast.success(`${numbers.length} número(s) importado(s) do grupo "${groupName}"`);
     } catch (e) {
       console.error("Import error:", e);
       toast.error("Erro ao importar membros do grupo");
@@ -249,39 +249,55 @@ export default function ValidateNumbers() {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs text-muted-foreground">Números</Label>
-                  <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+                  <Dialog open={importDialogOpen} onOpenChange={handleOpenImportDialog}>
                     <DialogTrigger asChild>
                       <Button variant="outline" size="sm" className="text-xs border-border/50 h-7">
                         <Users className="h-3 w-3 mr-1" /> Importar do Grupo
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="glass-card border-border/50">
+                    <DialogContent className="glass-card border-border/50 max-h-[80vh]">
                       <DialogHeader>
                         <DialogTitle className="text-base">Importar Membros do Grupo</DialogTitle>
                       </DialogHeader>
-                      <p className="text-xs text-muted-foreground">Selecione um grupo para importar os números dos membros.</p>
-                      <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                        {groups?.map((g: any) => (
-                          <Button
-                            key={g.id}
-                            variant="outline"
-                            className="w-full justify-between border-border/30 hover:border-primary/30 hover:bg-primary/5 text-sm"
-                            disabled={importingGroup === g.id}
-                            onClick={() => importGroupMembers(g.id)}
-                          >
-                            <span className="truncate">{g.name}</span>
-                            <span className="flex items-center gap-2 text-muted-foreground/50 text-xs">
-                              {g.participant_count || "?"} membros
-                              {importingGroup === g.id ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              ) : (
-                                <Users className="h-3.5 w-3.5" />
-                              )}
-                            </span>
-                          </Button>
-                        ))}
-                        {!groups?.length && (
-                          <p className="text-xs text-muted-foreground text-center py-4">Nenhum grupo monitorado</p>
+                      <p className="text-xs text-muted-foreground">Todos os grupos da instância. Busque e selecione para importar.</p>
+                      <Input
+                        placeholder="Buscar grupo..."
+                        value={groupSearch}
+                        onChange={(e) => setGroupSearch(e.target.value)}
+                        className="bg-muted/30 border-border/50 text-sm"
+                      />
+                      <div className="space-y-1.5 max-h-[350px] overflow-y-auto">
+                        {loadingGroups ? (
+                          <div className="flex items-center justify-center py-8">
+                            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                          </div>
+                        ) : (
+                          <>
+                            {allGroups
+                              .filter((g) => !groupSearch || g.name?.toLowerCase().includes(groupSearch.toLowerCase()))
+                              .map((g: any) => (
+                                <Button
+                                  key={g.jid}
+                                  variant="outline"
+                                  className="w-full justify-between border-border/30 hover:border-primary/30 hover:bg-primary/5 text-sm"
+                                  disabled={importingGroup === g.jid}
+                                  onClick={() => importGroupMembers(g.jid, g.name)}
+                                >
+                                  <span className="truncate text-left">{g.name}</span>
+                                  <span className="flex items-center gap-2 text-muted-foreground/50 text-xs shrink-0">
+                                    {g.size || "?"} membros
+                                    {importingGroup === g.jid ? (
+                                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    ) : (
+                                      <Users className="h-3.5 w-3.5" />
+                                    )}
+                                  </span>
+                                </Button>
+                              ))}
+                            {!allGroups.length && !loadingGroups && (
+                              <p className="text-xs text-muted-foreground text-center py-4">Nenhum grupo encontrado</p>
+                            )}
+                          </>
                         )}
                       </div>
                     </DialogContent>
